@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Interviewing in Market Research — Interactive Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --charcoal: #1E2328;
+      --slate: #2C3640;
+      --navy: #1B3A4B;
+      --teal: #2E6F7A;
+      --teal-light: #3A8F9C;
+      --amber: #D4914E;
+      --amber-light: #E8B070;
+      --gold: #C9A53A;
+      --cream: #FAF8F5;
+      --warm-white: #FFFEF9;
+      --light-teal: #EEF5F6;
+      --text-muted: #6B7B85;
+      --text-light: #9AA5AC;
+      --success-green: #3D8B5A;
+      --urgent-red: #C44536;
+      --high-orange: #E07A3A;
+      --caution-yellow: #D4A83A;
+      --watch-blue: #4A7FA5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      background-color: var(--warm-white);
+      color: var(--charcoal);
+      min-height: 100vh;
+    }
+
+    .sans { font-family: 'DM Sans', system-ui, sans-serif; }
+
+    .gradient-bar {
+      height: 4px;
+      background: linear-gradient(90deg, var(--navy), var(--teal), var(--amber));
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 48px; }
+    @media (max-width: 768px) { .container { padding: 24px; } }
+
+    /* Header */
+    .header { margin-bottom: 48px; }
+    .header-tag { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .header-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--amber)); }
+    .header-label {
+      font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+      font-weight: 600; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    }
+    .header h1 { font-size: 52px; font-weight: 400; line-height: 1.12; margin-bottom: 24px; }
+    @media (max-width: 768px) { .header h1 { font-size: 34px; } }
+    .header h1 .accent { color: var(--teal); }
+    .header h1 .accent2 { color: var(--amber); }
+    .header-desc {
+      font-size: 17px; max-width: 800px; line-height: 1.7;
+      margin-bottom: 32px; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    }
+    .header-desc .hl-teal { color: var(--teal); font-weight: 600; }
+    .header-desc .hl-amber { color: var(--amber); font-weight: 600; }
+
+    /* Progress */
+    .progress-wrap { margin-bottom: 32px; }
+    .progress-label { font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .progress-track { height: 6px; background-color: var(--light-teal); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--navy), var(--teal), var(--amber)); border-radius: 3px; transition: width 0.6s ease; }
+
+    /* Nav */
+    .nav {
+      display: inline-flex; flex-wrap: wrap; gap: 6px; padding: 6px;
+      border-radius: 14px; background-color: var(--light-teal);
+    }
+    .nav-btn {
+      padding: 10px 18px; border-radius: 10px; border: none; font-size: 13px;
+      font-weight: 600; background-color: transparent; color: var(--text-muted);
+      cursor: pointer; transition: all 0.3s ease; font-family: 'DM Sans', sans-serif;
+    }
+    .nav-btn.active {
+      background-color: var(--warm-white); color: var(--teal);
+      box-shadow: 0 2px 12px rgba(30, 35, 40, 0.1);
+    }
+    .nav-btn .nav-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 50%; font-size: 10px;
+      background-color: rgba(46,111,122,0.12); color: var(--teal); margin-right: 6px;
+    }
+    .nav-btn.active .nav-num { background-color: var(--teal); color: white; }
+    .nav-btn.completed .nav-num { background-color: var(--success-green); color: white; }
+
+    /* Tabs */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .section-label {
+      font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+      font-weight: 600; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+      margin-bottom: 28px;
+    }
+
+    /* Stat Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 56px; }
+    @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      position: relative; overflow: hidden; border-radius: 16px; padding: 24px 26px;
+      box-shadow: 0 4px 20px rgba(30, 35, 40, 0.1); transition: all 0.4s ease;
+    }
+    .stat-card:hover { transform: scale(1.02) translateY(-3px); }
+    .stat-card.c1 { background: linear-gradient(135deg, var(--charcoal) 0%, var(--slate) 100%); color: var(--cream); }
+    .stat-card.c2 { background: linear-gradient(135deg, var(--navy) 0%, var(--teal) 100%); color: var(--cream); }
+    .stat-card.c3 { background: linear-gradient(135deg, var(--amber) 0%, var(--gold) 100%); color: var(--charcoal); }
+    .stat-card.c4 { background: linear-gradient(135deg, var(--teal) 0%, #1d5a64 100%); color: var(--cream); }
+
+    .stat-card-circle {
+      position: absolute; right: -32px; top: -32px; width: 120px; height: 120px;
+      border-radius: 50%; opacity: 0.1; background-color: var(--amber); transition: transform 0.5s ease;
+    }
+    .stat-card:hover .stat-card-circle { transform: scale(1.5); }
+    .stat-card-icon { position: absolute; top: 16px; right: 16px; font-size: 22px; opacity: 0.3; }
+    .stat-card-value { font-size: 34px; font-weight: 600; line-height: 1; margin-bottom: 8px; }
+    .stat-card-label { font-size: 13px; font-family: 'DM Sans', sans-serif; opacity: 0.85; line-height: 1.4; }
+
+    /* Quote Section */
+    .quote-section { background-color: var(--cream); border-radius: 20px; padding: 44px; margin-bottom: 56px; position: relative; border: 1px solid rgba(46,111,122,0.1); }
+    .quote-mark { font-size: 100px; color: var(--teal); opacity: 0.15; position: absolute; top: 12px; left: 36px; line-height: 1; }
+    .quote-text { font-size: 22px; line-height: 1.5; max-width: 860px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
+    @media (max-width: 768px) { .quote-text { font-size: 18px; } }
+    .quote-author { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+
+    /* Stage / Process Cards */
+    .process-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 56px; }
+    @media (max-width: 900px) { .process-grid { grid-template-columns: 1fr; } }
+
+    .process-card {
+      background-color: var(--cream); border-radius: 16px; padding: 28px;
+      border-left: 5px solid var(--teal); cursor: pointer; transition: all 0.3s ease;
+      position: relative; overflow: hidden;
+    }
+    .process-card:hover { transform: translateX(6px); box-shadow: 0 8px 24px rgba(30, 35, 40, 0.08); }
+    .process-card.s2 { border-left-color: var(--watch-blue); }
+    .process-card.s3 { border-left-color: var(--amber); }
+    .process-card.s4 { border-left-color: var(--success-green); }
+    .process-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%; font-size: 14px; font-weight: 700;
+      font-family: 'DM Sans', sans-serif; background-color: var(--light-teal); color: var(--teal); margin-bottom: 12px;
+    }
+    .process-card.s2 .process-num { background: rgba(74,127,165,0.15); color: var(--watch-blue); }
+    .process-card.s3 .process-num { background: rgba(212,145,78,0.15); color: var(--amber); }
+    .process-card.s4 .process-num { background: rgba(61,139,90,0.15); color: var(--success-green); }
+    .process-title { font-size: 18px; margin-bottom: 8px; color: var(--charcoal); }
+    .process-desc { font-size: 14px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; line-height: 1.6; }
+    .process-expanded { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--light-teal); }
+    .process-card.active .process-expanded { display: block; }
+    .process-detail { font-size: 13px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; line-height: 1.65; }
+    .process-detail strong { color: var(--charcoal); }
+    .process-toggle { font-size: 12px; color: var(--teal); font-family: 'DM Sans', sans-serif; margin-top: 10px; }
+
+    /* Dark Section */
+    .dark-section { background-color: var(--charcoal); border-radius: 20px; padding: 44px; color: var(--cream); margin-bottom: 56px; }
+    .dark-section .section-label { color: var(--amber-light); }
+    .principles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
+    @media (max-width: 768px) { .principles-grid { grid-template-columns: 1fr; } }
+    .principle-icon { font-size: 30px; margin-bottom: 14px; }
+    .principle-title { font-size: 17px; margin-bottom: 10px; color: var(--amber-light); }
+    .principle-desc { font-size: 14px; line-height: 1.6; font-family: 'DM Sans', sans-serif; opacity: 0.85; }
+
+    /* Vendor Table */
+    .vendor-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; font-family: 'DM Sans', sans-serif; }
+    .vendor-table th { text-align: left; padding: 14px 16px; background-color: var(--charcoal); color: var(--cream); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .vendor-table th:first-child { border-radius: 12px 0 0 0; }
+    .vendor-table th:last-child { border-radius: 0 12px 0 0; }
+    .vendor-table td { padding: 14px 16px; border-bottom: 1px solid var(--light-teal); font-size: 13px; vertical-align: top; }
+    .vendor-table tr:hover td { background-color: var(--cream); }
+    .vendor-name { font-weight: 600; color: var(--charcoal); }
+    .vendor-approach { color: var(--text-muted); line-height: 1.5; }
+    .vtag { display: inline-block; padding: 3px 10px; border-radius: 16px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .vtag.enterprise { background-color: rgba(46,111,122,0.12); color: var(--teal); }
+    .vtag.startup { background-color: rgba(212,145,78,0.15); color: var(--amber); }
+    .vtag.midmarket { background-color: rgba(74,127,165,0.15); color: var(--watch-blue); }
+
+    /* Comparison Visual */
+    .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 56px; }
+    @media (max-width: 768px) { .comparison-grid { grid-template-columns: 1fr; } }
+    .comparison-card { background-color: var(--cream); border-radius: 16px; padding: 28px; }
+    .comparison-card.human { border-top: 4px solid var(--teal); }
+    .comparison-card.ai { border-top: 4px solid var(--amber); }
+    .comparison-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; font-family: 'DM Sans', sans-serif; font-weight: 600; margin-bottom: 20px; }
+    .comparison-title.human { color: var(--teal); }
+    .comparison-title.ai { color: var(--amber); }
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .bar-label { width: 120px; flex-shrink: 0; font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--charcoal); }
+    .bar-track { flex: 1; height: 24px; background: var(--light-teal); border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+    .bar-fill.teal { background: linear-gradient(90deg, var(--navy), var(--teal)); }
+    .bar-fill.amber { background: linear-gradient(90deg, var(--amber), var(--gold)); }
+    .bar-val { font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif; color: white; }
+
+    /* Hybrid Model Cards */
+    .hybrid-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 56px; }
+    @media (max-width: 1024px) { .hybrid-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .hybrid-grid { grid-template-columns: 1fr; } }
+    .hybrid-card {
+      background: var(--cream); border-radius: 14px; padding: 20px; text-align: center;
+      border: 2px solid transparent; transition: all 0.3s ease; cursor: pointer;
+    }
+    .hybrid-card:hover { border-color: var(--teal); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+    .hybrid-card.active { border-color: var(--teal); background: rgba(46,111,122,0.04); }
+    .hybrid-icon { font-size: 28px; margin-bottom: 10px; }
+    .hybrid-name { font-size: 13px; font-weight: 600; color: var(--charcoal); font-family: 'DM Sans', sans-serif; line-height: 1.3; }
+    .hybrid-detail-box { background: var(--cream); border-radius: 16px; padding: 28px; border-left: 5px solid var(--teal); margin-bottom: 56px; min-height: 80px; transition: all 0.3s ease; }
+    .hybrid-detail-title { font-size: 18px; margin-bottom: 10px; color: var(--charcoal); }
+    .hybrid-detail-text { font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); line-height: 1.7; }
+
+    /* Failure Cards */
+    .failure-card {
+      background-color: var(--cream); border-radius: 16px; padding: 28px;
+      margin-bottom: 20px; border-left: 5px solid; transition: all 0.3s ease; cursor: pointer;
+    }
+    .failure-card:hover { transform: translateX(6px); box-shadow: 0 8px 24px rgba(30,35,40,0.08); }
+    .failure-card.critical { border-left-color: var(--urgent-red); }
+    .failure-card.serious { border-left-color: var(--high-orange); }
+    .failure-card.caution { border-left-color: var(--caution-yellow); }
+    .failure-card.structural { border-left-color: var(--watch-blue); }
+
+    .failure-header { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+    .failure-severity {
+      padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em;
+    }
+    .failure-severity.critical { background-color: var(--urgent-red); color: white; }
+    .failure-severity.serious { background-color: var(--high-orange); color: white; }
+    .failure-severity.caution { background-color: var(--caution-yellow); color: var(--charcoal); }
+    .failure-severity.structural { background-color: var(--watch-blue); color: white; }
+    .failure-source { font-size: 11px; font-family: 'DM Sans', sans-serif; color: var(--text-light); }
+
+    .failure-title { font-size: 20px; margin-bottom: 8px; color: var(--charcoal); }
+    .failure-desc { font-size: 14px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; line-height: 1.6; }
+    .failure-evidence { display: none; margin-top: 14px; padding: 18px; background-color: var(--warm-white); border-radius: 12px; }
+    .failure-card.active .failure-evidence { display: block; }
+    .evidence-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--amber); font-family: 'DM Sans', sans-serif; font-weight: 600; margin-bottom: 8px; }
+    .evidence-text { font-size: 13px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; line-height: 1.6; }
+    .failure-toggle { font-size: 12px; color: var(--teal); font-family: 'DM Sans', sans-serif; margin-top: 10px; }
+
+    /* Meter Bars */
+    .meter-group { margin-bottom: 24px; }
+    .meter-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .meter-name { font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--charcoal); font-weight: 500; }
+    .meter-val { font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--teal); font-weight: 600; }
+    .meter-track { height: 10px; background-color: var(--light-teal); border-radius: 5px; overflow: hidden; }
+    .meter-fill { height: 100%; border-radius: 5px; transition: width 1s ease; }
+    .meter-fill.green { background: linear-gradient(90deg, var(--teal), var(--success-green)); }
+    .meter-fill.amber { background: linear-gradient(90deg, var(--amber), var(--gold)); }
+    .meter-fill.red { background: linear-gradient(90deg, var(--high-orange), var(--urgent-red)); }
+
+    /* Decision Tool */
+    .decision-tool { background-color: var(--charcoal); border-radius: 20px; padding: 44px; color: var(--cream); margin-bottom: 56px; }
+    .decision-tool .section-label { color: var(--amber-light); }
+    .decision-q { font-size: 22px; margin-bottom: 28px; line-height: 1.4; max-width: 700px; }
+    .decision-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+    @media (max-width: 768px) { .decision-options { grid-template-columns: 1fr; } }
+    .decision-btn {
+      padding: 18px 22px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.15);
+      background: transparent; color: var(--cream); font-size: 14px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: all 0.3s ease; text-align: left; line-height: 1.4;
+    }
+    .decision-btn:hover { border-color: var(--amber); background: rgba(212,145,78,0.12); }
+    .decision-result {
+      padding: 24px; border-radius: 12px; margin-top: 12px;
+      font-size: 14px; font-family: 'DM Sans', sans-serif; line-height: 1.6;
+    }
+    .decision-result.go { background-color: rgba(61,139,90,0.2); border: 1px solid rgba(61,139,90,0.4); }
+    .decision-result.caution { background-color: rgba(212,168,58,0.15); border: 1px solid rgba(212,168,58,0.4); }
+    .decision-result.stop { background-color: rgba(196,69,54,0.15); border: 1px solid rgba(196,69,54,0.4); }
+    .decision-restart {
+      padding: 10px 22px; border-radius: 8px; border: 1px solid var(--amber);
+      background: transparent; color: var(--amber); font-size: 13px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; margin-top: 16px; transition: all 0.3s ease;
+    }
+    .decision-restart:hover { background: rgba(212,145,78,0.15); }
+
+    /* Quiz */
+    .quiz-card { background-color: var(--cream); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+    .quiz-q { font-size: 17px; margin-bottom: 18px; color: var(--charcoal); line-height: 1.4; }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .quiz-opt {
+      padding: 13px 18px; border-radius: 10px; border: 2px solid var(--light-teal);
+      background: var(--warm-white); font-size: 13px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: all 0.3s ease; text-align: left; color: var(--charcoal); line-height: 1.4;
+    }
+    .quiz-opt:hover { border-color: var(--teal); }
+    .quiz-opt.correct { border-color: var(--success-green); background-color: rgba(61,139,90,0.08); }
+    .quiz-opt.incorrect { border-color: var(--urgent-red); background-color: rgba(196,69,54,0.06); }
+    .quiz-opt.disabled { pointer-events: none; opacity: 0.7; }
+    .quiz-opt.correct.disabled { opacity: 1; }
+    .quiz-feedback { font-size: 13px; font-family: 'DM Sans', sans-serif; line-height: 1.6; padding: 14px; border-radius: 10px; display: none; }
+    .quiz-feedback.show { display: block; }
+    .quiz-feedback.correct { background-color: rgba(61,139,90,0.08); color: var(--success-green); }
+    .quiz-feedback.incorrect { background-color: rgba(196,69,54,0.06); color: var(--urgent-red); }
+    .quiz-score { display: none; align-items: center; gap: 16px; padding: 20px; background-color: var(--light-teal); border-radius: 12px; margin-bottom: 24px; }
+    .quiz-score-num { font-size: 34px; font-weight: 600; color: var(--teal); }
+    .quiz-score-label { font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); }
+
+    /* Cost Grid */
+    .cost-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 40px; }
+    @media (max-width: 768px) { .cost-grid { grid-template-columns: 1fr; } }
+    .cost-card { background: var(--cream); border-radius: 16px; padding: 24px; }
+    .cost-card.traditional { border-top: 4px solid var(--text-muted); }
+    .cost-card.ai-mod { border-top: 4px solid var(--success-green); }
+    .cost-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; font-family: 'DM Sans', sans-serif; font-weight: 600; margin-bottom: 16px; }
+    .cost-title.traditional { color: var(--text-muted); }
+    .cost-title.ai-mod { color: var(--success-green); }
+    .cost-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--light-teal); font-size: 13px; font-family: 'DM Sans', sans-serif; }
+    .cost-row:last-child { border-bottom: none; }
+    .cost-item { color: var(--text-muted); }
+    .cost-val { font-weight: 600; color: var(--charcoal); }
+    .cost-val.green { color: var(--success-green); }
+    .cost-val.red { color: var(--urgent-red); }
+
+    /* Interactive Depth Ceiling Viz */
+    .depth-viz { margin-bottom: 56px; }
+    .depth-controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .depth-btn {
+      padding: 10px 18px; border-radius: 8px; border: 2px solid var(--light-teal);
+      background: var(--warm-white); font-size: 13px; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: all 0.3s ease; color: var(--charcoal);
+    }
+    .depth-btn:hover { border-color: var(--teal); }
+    .depth-btn.active { border-color: var(--teal); background-color: var(--teal); color: white; }
+    .depth-layers { position: relative; }
+    .depth-layer {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
+      padding: 16px 20px; border-radius: 12px; background: var(--cream);
+      transition: all 0.5s ease; overflow: hidden;
+    }
+    .depth-layer-num { font-size: 12px; font-weight: 700; font-family: 'DM Sans', sans-serif; color: var(--teal); width: 24px; text-align: center; flex-shrink: 0; }
+    .depth-layer-name { font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 600; color: var(--charcoal); width: 160px; flex-shrink: 0; }
+    .depth-layer-bar { flex: 1; height: 20px; background: var(--light-teal); border-radius: 4px; overflow: hidden; }
+    .depth-layer-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .depth-layer-fill.human { background: linear-gradient(90deg, var(--navy), var(--teal)); }
+    .depth-layer-fill.ai { background: linear-gradient(90deg, var(--amber), var(--gold)); }
+    .depth-layer-note { font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); width: 200px; flex-shrink: 0; }
+    @media (max-width: 768px) { .depth-layer-note { display: none; } .depth-layer-name { width: 100px; } }
+    .depth-insight { padding: 18px; border-radius: 12px; background-color: var(--cream); border-left: 4px solid var(--teal); font-size: 14px; font-family: 'DM Sans', sans-serif; line-height: 1.6; color: var(--text-muted); margin-top: 16px; }
+    .depth-insight strong { color: var(--charcoal); }
+
+    /* Sector Cards */
+    .sector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 56px; }
+    @media (max-width: 900px) { .sector-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .sector-grid { grid-template-columns: 1fr; } }
+    .sector-card {
+      background: var(--cream); border-radius: 14px; padding: 22px; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.3s ease;
+    }
+    .sector-card:hover { border-color: var(--teal); transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.05); }
+    .sector-card.active { border-color: var(--teal); }
+    .sector-icon { font-size: 26px; margin-bottom: 10px; }
+    .sector-name { font-size: 15px; font-weight: 600; color: var(--charcoal); margin-bottom: 6px; }
+    .sector-adoption { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; font-family: 'DM Sans', sans-serif; margin-bottom: 8px; }
+    .sector-adoption.high { background: rgba(61,139,90,0.12); color: var(--success-green); }
+    .sector-adoption.medium { background: rgba(212,145,78,0.15); color: var(--amber); }
+    .sector-adoption.low { background: rgba(196,69,54,0.1); color: var(--urgent-red); }
+    .sector-desc { font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); line-height: 1.5; }
+    .sector-expanded { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--light-teal); font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); line-height: 1.5; }
+    .sector-card.active .sector-expanded { display: block; }
+
+    /* Footer */
+    .footer { display: flex; align-items: center; gap: 16px; padding-top: 40px; border-top: 1px solid var(--light-teal); margin-top: 60px; }
+    .footer-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--amber)); display: flex; align-items: center; justify-content: center; color: var(--cream); font-size: 16px; font-weight: 600; }
+    .footer-title { font-size: 14px; font-weight: 500; }
+    .footer-subtitle { font-size: 12px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
+
+    section { margin-bottom: 44px; }
+
+    /* Impact Grid */
+    .impact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 56px; }
+    @media (max-width: 768px) { .impact-grid { grid-template-columns: 1fr; } }
+    .impact-card { background-color: var(--light-teal); border-radius: 12px; padding: 24px; text-align: center; }
+    .impact-value { font-size: 30px; font-weight: 600; color: var(--teal); margin-bottom: 6px; }
+    .impact-label { font-size: 12px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: 0.1em; line-height: 1.4; }
+
+    /* Checklist */
+    .checklist-item {
+      background: var(--cream); border-radius: 12px; padding: 18px 22px; margin-bottom: 10px;
+      display: flex; gap: 14px; align-items: flex-start; cursor: pointer; transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .checklist-item:hover { border-color: var(--teal); }
+    .checklist-item.checked { border-color: var(--success-green); background: rgba(61,139,90,0.04); }
+    .check-box {
+      width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px;
+      border: 2px solid var(--light-teal); display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: all 0.3s ease; margin-top: 2px;
+    }
+    .checklist-item.checked .check-box { background: var(--success-green); border-color: var(--success-green); color: white; }
+    .check-content { flex: 1; }
+    .check-title { font-size: 14px; font-weight: 600; color: var(--charcoal); margin-bottom: 3px; }
+    .check-desc { font-size: 12px; font-family: 'DM Sans', sans-serif; color: var(--text-muted); line-height: 1.5; }
+    .check-progress { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 14px; background: var(--light-teal); border-radius: 10px; }
+    .check-progress-bar { flex: 1; height: 8px; background: var(--cream); border-radius: 4px; overflow: hidden; }
+    .check-progress-fill { height: 100%; background: var(--success-green); border-radius: 4px; transition: width 0.4s ease; }
+    .check-progress-label { font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 600; color: var(--teal); min-width: 40px; }
+  </style>
+</head>
+<body>
+
+<div class="gradient-bar"></div>
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-tag">
+      <div class="header-dot"></div>
+      <span class="header-label">Interactive Learning Explorer</span>
+    </div>
+    <h1>AI-Moderated <span class="accent">Interviewing</span><span class="accent2">.</span></h1>
+    <p class="header-desc">
+      An interactive guide to <span class="hl-teal">AI moderation in qualitative market research</span> — how it works, where it excels, where it fails, and how to <span class="hl-amber">make informed deployment decisions</span>. Click, explore, and test your understanding.
+    </p>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Your exploration progress</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <nav class="nav" id="mainNav">
+      <button class="nav-btn active" data-tab="foundations"><span class="nav-num">1</span>Foundations</button>
+      <button class="nav-btn" data-tab="platforms"><span class="nav-num">2</span>Platforms</button>
+      <button class="nav-btn" data-tab="implementation"><span class="nav-num">3</span>Implementation</button>
+      <button class="nav-btn" data-tab="evidence"><span class="nav-num">4</span>Evidence</button>
+      <button class="nav-btn" data-tab="limitations"><span class="nav-num">5</span>Limitations</button>
+      <button class="nav-btn" data-tab="decide"><span class="nav-num">6</span>Decide & Test</button>
+    </nav>
+  </header>
+
+  <!-- ========== TAB 1: FOUNDATIONS ========== -->
+  <div id="foundations" class="tab-content active">
+    <section>
+      <h2 class="section-label">The Landscape at a Glance</h2>
+      <div class="stats-grid">
+        <div class="stat-card c1"><div class="stat-card-circle"></div><span class="stat-card-icon">🎙</span><div class="stat-card-value">89%</div><div class="stat-card-label sans">of MR professionals use AI tools regularly or experimentally (2025)</div></div>
+        <div class="stat-card c2"><div class="stat-card-circle"></div><span class="stat-card-icon">⚡</span><div class="stat-card-value">8–100×</div><div class="stat-card-label sans">faster turnaround than traditional qual fieldwork</div></div>
+        <div class="stat-card c3"><div class="stat-card-circle"></div><span class="stat-card-icon">💰</span><div class="stat-card-value">75–81%</div><div class="stat-card-label sans">cost reduction versus traditional human-moderated interviews</div></div>
+        <div class="stat-card c4"><div class="stat-card-circle"></div><span class="stat-card-icon">🔬</span><div class="stat-card-value">93.9%</div><div class="stat-card-label sans">LLM accuracy coding open-ended responses (vs. 94.7% human)</div></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="quote-section">
+        <span class="quote-mark">"</span>
+        <p class="quote-text">Qualitative depth at quantitative scale — the elimination of the traditional trade-off between depth and breadth.</p>
+        <p class="quote-author">— The core value proposition of AI-moderated interviewing</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">The Four Stages — Click to Explore</h2>
+      <div class="process-grid">
+        <div class="process-card" onclick="toggleProcess(this)">
+          <div class="process-num">1</div>
+          <h3 class="process-title">Conversation Design</h3>
+          <p class="process-desc">Researchers create discussion guides with 3–15 core open-ended questions, probing instructions, and branching logic.</p>
+          <div class="process-expanded">
+            <p class="process-detail"><strong>Key difference from human moderation:</strong> The AI relies entirely on written instructions — it cannot absorb unwritten context from a verbal briefing. Research goals shape the interview style: usability testing sticks to task flows, concept testing focuses on perceptions and emotions, exploratory research follows interesting threads. Hubble describes the guide as "part research design and part prompt engineering."</p>
+          </div>
+          <p class="process-toggle">Click to expand ▼</p>
+        </div>
+
+        <div class="process-card s2" onclick="toggleProcess(this)">
+          <div class="process-num">2</div>
+          <h3 class="process-title">Pre-Interview Safeguards</h3>
+          <p class="process-desc">Automated screening for engagement, demographic fit, and fraud detection before interviews begin.</p>
+          <div class="process-expanded">
+            <p class="process-detail"><strong>Why this matters:</strong> AI-as-participant is a real threat — Taylor & Francis documented ChatGPT-generated responses infiltrating qualitative research. Platforms like Listen Labs reduce invalid responses from ~20% to near zero through fraud detection. Glaut uses an "uncooperative detector" and "consistency check agent" to flag fraudulent or inconsistent respondents in real time.</p>
+          </div>
+          <p class="process-toggle">Click to expand ▼</p>
+        </div>
+
+        <div class="process-card s3" onclick="toggleProcess(this)">
+          <div class="process-num">3</div>
+          <h3 class="process-title">Live Interview (LLM Probing)</h3>
+          <p class="process-desc">AI dynamically generates follow-up probes based on sentiment, enthusiasm, hedging language, and response completeness.</p>
+          <div class="process-expanded">
+            <p class="process-detail"><strong>Under the hood:</strong> The most sophisticated technique is <strong>abductive chain-of-thought reasoning</strong> — when a participant mentions something surprising, the AI reasons backward to generate hypotheses that become new conversation slots. Outset probes 0, 1, or 2 times per answer. Counterintuitively, 83% of participants report feeling <strong>more open</strong> with AI than human moderators.</p>
+          </div>
+          <p class="process-toggle">Click to expand ▼</p>
+        </div>
+
+        <div class="process-card s4" onclick="toggleProcess(this)">
+          <div class="process-num">4</div>
+          <h3 class="process-title">Analysis</h3>
+          <p class="process-desc">AI performs multi-layer processing: thematic clustering, sentiment analysis, auto-coding, and interpretive analysis — often in real time.</p>
+          <div class="process-expanded">
+            <p class="process-detail"><strong>At scale:</strong> When running 500 interviews instead of 15, traditional manual coding breaks down. Focaldata uses three frameworks: <strong>laddering analysis</strong> (aggregating "why" chains — "38% linked natural ingredients → skin feels healthy → sense of self-care"), <strong>topic modeling with sentiment overlay</strong>, and <strong>generative recommendations</strong> synthesized from hundreds of conversations in minutes.</p>
+          </div>
+          <p class="process-toggle">Click to expand ▼</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="dark-section">
+        <h2 class="section-label">The Critical Distinction</h2>
+        <p style="font-size:16px; font-family:'DM Sans',sans-serif; line-height:1.7; opacity:0.9; margin-bottom:28px; max-width:700px;">The industry draws an important line between two models of AI involvement in qualitative research.</p>
+        <div class="principles-grid" style="grid-template-columns: 1fr 1fr;">
+          <div>
+            <div class="principle-icon">🤖</div>
+            <h3 class="principle-title">Fully Autonomous AI Moderators</h3>
+            <p class="principle-desc">Independently conduct interviews without human intervention. The researcher designs the study; the AI runs it. Used by Outset, Glaut, Conveo, Listen Labs, Yazi. Achieves maximum scale but carries highest risk of missed nuance.</p>
+          </div>
+          <div>
+            <div class="principle-icon">🤝</div>
+            <h3 class="principle-title">AI-Assisted Human Moderators</h3>
+            <p class="principle-desc">AI augments rather than replaces human moderators — providing real-time analysis, theme identification, and follow-up suggestions while a human leads. Pioneered by Remesh, explicitly advocated by Ipsos. Greater depth but less scale.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== TAB 2: PLATFORMS ========== -->
+  <div id="platforms" class="tab-content">
+    <section>
+      <h2 class="section-label">Key Platform Metrics</h2>
+      <div class="stats-grid">
+        <div class="stat-card c2"><div class="stat-card-circle"></div><span class="stat-card-icon">🏢</span><div class="stat-card-value">$42.7M</div><div class="stat-card-label sans">Remesh total funding — most mature platform (founded 2014)</div></div>
+        <div class="stat-card c1"><div class="stat-card-circle"></div><span class="stat-card-icon">🎯</span><div class="stat-card-value">1,000</div><div class="stat-card-label sans">simultaneous participants in Remesh live digital focus groups</div></div>
+        <div class="stat-card c3"><div class="stat-card-circle"></div><span class="stat-card-icon">📱</span><div class="stat-card-value">90%</div><div class="stat-card-label sans">response rate — Yazi via WhatsApp in emerging markets</div></div>
+        <div class="stat-card c4"><div class="stat-card-circle"></div><span class="stat-card-icon">📊</span><div class="stat-card-value">2.1×</div><div class="stat-card-label sans">increase in words & topics with Qualtrics Conversational Feedback</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Platform Landscape</h2>
+      <div style="overflow-x:auto;">
+      <table class="vendor-table">
+        <thead><tr><th>Platform</th><th>Approach</th><th>Tier</th><th>Notable</th></tr></thead>
+        <tbody>
+          <tr><td class="vendor-name">Outset.ai</td><td class="vendor-approach">AI-moderated video, voice, or text interviews. Custom Moderators with configurable style & probing depth.</td><td><span class="vtag startup">YC / $30M B</span></td><td>WeightWatchers: 100 IDIs in 24 hours</td></tr>
+          <tr><td class="vendor-name">Remesh</td><td class="vendor-approach">Live digital focus groups with up to 1,000 participants. Percent Agree Scores for real-time consensus.</td><td><span class="vtag enterprise">$42.7M</span></td><td>Pioneered AI-assisted model (2014)</td></tr>
+          <tr><td class="vendor-name">Conveo</td><td class="vendor-approach">Video-first multimodal: voice, video, tone, facial expressions, objects. 50%+ insights from AI follow-ups.</td><td><span class="vtag startup">YC / $5.3M</span></td><td>Unilever, Google, P&G clients</td></tr>
+          <tr><td class="vendor-name">Listen Labs</td><td class="vendor-approach">Harvard-born. 30M+ participant panel with advanced fraud detection.</td><td><span class="vtag startup">IIEX Winner</span></td><td>~20% → near-zero invalid responses</td></tr>
+          <tr><td class="vendor-name">Discuss.io</td><td class="vendor-approach">Live human + AI-moderated self-paced research. Interview, Project, and Insights Agents.</td><td><span class="vtag enterprise">Est. 2012</span></td><td>64% YoY platform usage increase</td></tr>
+          <tr><td class="vendor-name">Yazi</td><td class="vendor-approach">Native WhatsApp AI interviewing. $1.60–$2.70 per respondent.</td><td><span class="vtag startup">Niche</span></td><td>90% response rates in emerging markets</td></tr>
+          <tr><td class="vendor-name">Qualtrics</td><td class="vendor-approach">Conversational Feedback: AI follow-up questions within existing surveys. 6-click setup.</td><td><span class="vtag enterprise">$6.75B acq.</span></td><td>2.1× words, 2.2× topics, no drop in completion</td></tr>
+          <tr><td class="vendor-name">Glaut</td><td class="vendor-approach">Pioneered "AIMI" terminology. QC agents for fraud & consistency. Trusted by Ipsos, Kantar.</td><td><span class="vtag midmarket">Mid-Market</span></td><td>26% gibberish vs. 56% in static surveys</td></tr>
+          <tr><td class="vendor-name">Tellet</td><td class="vendor-approach">European data sovereignty focus. GDPR compliance and EU data residency.</td><td><span class="vtag startup">Amsterdam</span></td><td>Strong EU regulatory positioning</td></tr>
+          <tr><td class="vendor-name">Strella</td><td class="vendor-approach">Toggle between AI and human moderation. 42+ languages. 8M global panel.</td><td><span class="vtag midmarket">Mid-Market</span></td><td>Flexible AI/human switching</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Quant × Qual Convergence — AI Probing in Surveys</h2>
+      <p style="font-size:15px; font-family:'DM Sans',sans-serif; color:var(--text-muted); line-height:1.7; margin-bottom:24px; max-width:750px;">
+        Perhaps the most immediately impactful application: AI probing embedded directly inside quantitative surveys — not separate qualitative interviews.
+      </p>
+      <div class="impact-grid">
+        <div class="impact-card"><div class="impact-value">1,843</div><div class="impact-label">Respondents in Geisen's AAPOR randomised experiment</div></div>
+        <div class="impact-card"><div class="impact-value">87%</div><div class="impact-label">More topics identified via AI follow-up condition</div></div>
+        <div class="impact-card"><div class="impact-value">86.2%</div><div class="impact-label">Of triggered follow-ups were answered by respondents</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== TAB 3: IMPLEMENTATION ========== -->
+  <div id="implementation" class="tab-content">
+    <section>
+      <div class="quote-section">
+        <span class="quote-mark">"</span>
+        <p class="quote-text">The prompt is the new moderator guide.</p>
+        <p class="quote-author">— Remesh, on the fundamental skill translation for AI moderation</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Six Key Differences: Briefing AI vs. Human Moderators</h2>
+      <div class="process-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="process-card" style="border-left-color: var(--teal); cursor: default;">
+          <div class="process-num">1</div>
+          <h3 class="process-title" style="font-size:16px;">Everything Codified</h3>
+          <p class="process-desc">A human moderator can be told "push on pricing" during a break. AI needs this pre-programmed in writing.</p>
+        </div>
+        <div class="process-card s2" style="cursor: default;">
+          <div class="process-num">2</div>
+          <h3 class="process-title" style="font-size:16px;">Explicit Context</h3>
+          <p class="process-desc">Participant profiles, product context, competitive landscape — all implicit knowledge must be made explicit.</p>
+        </div>
+        <div class="process-card s3" style="cursor: default;">
+          <div class="process-num">3</div>
+          <h3 class="process-title" style="font-size:16px;">Behavioural Parameters</h3>
+          <p class="process-desc">Tone, follow-up limits, move-on triggers, off-limits topics — all must be specified upfront.</p>
+        </div>
+        <div class="process-card s4" style="cursor: default;">
+          <div class="process-num">4</div>
+          <h3 class="process-title" style="font-size:16px;">AI-Parsable Objectives</h3>
+          <p class="process-desc">Research objectives must be translated into concrete, actionable AI instructions — not abstract goals.</p>
+        </div>
+        <div class="process-card" style="border-left-color: var(--watch-blue); cursor: default;">
+          <div class="process-num">5</div>
+          <h3 class="process-title" style="font-size:16px;">Pre-Set Guardrails</h3>
+          <p class="process-desc">Ethical limits, sensitivity filters, topic scope — all boundaries must be defined before fieldwork begins.</p>
+        </div>
+        <div class="process-card s3" style="cursor: default;">
+          <div class="process-num">6</div>
+          <h3 class="process-title" style="font-size:16px;">No Real-Time Adjustment</h3>
+          <p class="process-desc">"AI can't turn on a dime. It can't fully follow a respondent's train of thought if they jump around." — Vital Findings</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">The Five Hybrid Models — Click to Explore</h2>
+      <div class="hybrid-grid" id="hybridGrid">
+        <div class="hybrid-card active" onclick="selectHybrid(0, this)">
+          <div class="hybrid-icon">🔍</div>
+          <div class="hybrid-name">AI First-Line Probing</div>
+        </div>
+        <div class="hybrid-card" onclick="selectHybrid(1, this)">
+          <div class="hybrid-icon">⚖️</div>
+          <div class="hybrid-name">Parallel Validation</div>
+        </div>
+        <div class="hybrid-card" onclick="selectHybrid(2, this)">
+          <div class="hybrid-icon">🔄</div>
+          <div class="hybrid-name">Human → AI Validation</div>
+        </div>
+        <div class="hybrid-card" onclick="selectHybrid(3, this)">
+          <div class="hybrid-icon">⚙️</div>
+          <div class="hybrid-name">AI Infrastructure</div>
+        </div>
+        <div class="hybrid-card" onclick="selectHybrid(4, this)">
+          <div class="hybrid-icon">🧠</div>
+          <div class="hybrid-name">Augmented Moderator</div>
+        </div>
+      </div>
+      <div class="hybrid-detail-box" id="hybridDetail">
+        <h3 class="hybrid-detail-title">AI First-Line Probing with Human Deep Follow-Up</h3>
+        <p class="hybrid-detail-text">Particularly effective for asynchronous diary studies where AI probes while participants are still online, and humans add depth later. The AI handles initial engagement and captures immediate reactions at scale, while human researchers identify the most promising threads for deeper exploration. This model preserves spontaneity while ensuring interpretive depth on the insights that matter most.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Sample Size Logic — A Fundamental Shift</h2>
+      <div class="comparison-grid">
+        <div class="comparison-card human">
+          <div class="comparison-title human">Traditional Qualitative</div>
+          <div class="bar-row"><span class="bar-label">Thematic saturation</span><div class="bar-track"><div class="bar-fill teal" id="tradBar1" style="width:0%"><span class="bar-val">~9</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Meaning saturation</span><div class="bar-track"><div class="bar-fill teal" id="tradBar2" style="width:0%"><span class="bar-val">~24</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Typical study size</span><div class="bar-track"><div class="bar-fill teal" id="tradBar3" style="width:0%"><span class="bar-val">15–30</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Cost per interview</span><div class="bar-track"><div class="bar-fill teal" id="tradBar4" style="width:0%"><span class="bar-val">$250–1K</span></div></div></div>
+        </div>
+        <div class="comparison-card ai">
+          <div class="comparison-title ai">AI-Moderated</div>
+          <div class="bar-row"><span class="bar-label">Focaldata typical</span><div class="bar-track"><div class="bar-fill amber" id="aiBar1" style="width:0%"><span class="bar-val">200–500</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Dairy Farmers case</span><div class="bar-track"><div class="bar-fill amber" id="aiBar2" style="width:0%"><span class="bar-val">500</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">LSE study scale</span><div class="bar-track"><div class="bar-fill amber" id="aiBar3" style="width:0%"><span class="bar-val">1000s</span></div></div></div>
+          <div class="bar-row"><span class="bar-label">Cost per interview</span><div class="bar-track"><div class="bar-fill amber" id="aiBar4" style="width:0%"><span class="bar-val">&lt;$60</span></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Implementation Checklist — Click Items to Track Progress</h2>
+      <div class="checklist-wrap">
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Write explicit discussion guide with labelled sections</div>
+            <div class="check-desc">Label warm-up, core, and reflection phases. Specify probing depth per question. Include contextual notes about stimuli.</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Set behavioural parameters and guardrails</div>
+            <div class="check-desc">Define tone, follow-up limits (1–3 per question is standard), move-on triggers, and off-limits topics before launch.</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Self-test 2–3 times before pilot</div>
+            <div class="check-desc">Run through the entire guide yourself. Assess flow, follow-up quality, and how AI handles off-topic responses.</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Pilot with 5–10 real participants</div>
+            <div class="check-desc">Review results with diverse participants before scaling. Iterate on the guide. "Working with AI is inherently nondeterministic." — Great Question</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Include researcher name in AI disclosure</div>
+            <div class="check-desc">Glassdoor found that including the researcher's name in AI disclosures doubled session length and eliminated drop-offs.</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Set up quality control layers</div>
+            <div class="check-desc">Focaldata removes 35% of their sample through seven layers of automated checks. Plan for gibberish detection, consistency checks, and response length monitoring.</div>
+          </div>
+        </div>
+        <div class="checklist-item" onclick="toggleCheck(this)">
+          <div class="check-box">✓</div>
+          <div class="check-content">
+            <div class="check-title">Cap interview duration at 20–30 minutes</div>
+            <div class="check-desc">Great Question recommends this maximum based on completion rate data. AI "can and will dig in incessantly if you let it."</div>
+          </div>
+        </div>
+        <div class="check-progress">
+          <div class="check-progress-bar"><div class="check-progress-fill" id="checkProgressFill" style="width:0%"></div></div>
+          <div class="check-progress-label" id="checkProgressLabel">0/7</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== TAB 4: EVIDENCE ========== -->
+  <div id="evidence" class="tab-content">
+    <section>
+      <h2 class="section-label">The Evidence Landscape</h2>
+      <div class="impact-grid">
+        <div class="impact-card"><div class="impact-value">1.6% → 59%</div><div class="impact-label">Growth of LLM-in-survey papers from 2022 to 2024</div></div>
+        <div class="impact-card"><div class="impact-value">142%</div><div class="impact-label">Increase in word count vs. conventional open text (LSE study)</div></div>
+        <div class="impact-card"><div class="impact-value">0</div><div class="impact-label">Published independent replication studies of AI interview papers</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Key Studies — Click for Evidence Detail</h2>
+
+      <div class="failure-card structural" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity structural">Landmark</span>
+          <span class="failure-source">LMU Munich · Wuttke et al. 2025</span>
+        </div>
+        <h3 class="failure-title">The Most Rigorous Controlled Experiment</h3>
+        <p class="failure-desc">Pre-registered study randomly assigning students to AI (GPT-4 Turbo) or human interviewers using identical questionnaires on political topics. Five evaluation categories.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Finding</p>
+          <p class="evidence-text">AI-conducted interviews produced data quality comparable to human-led interviews across most metrics, with strong guideline adherence but occasional latency issues. <strong>Critical limitations:</strong> very small sample size, university students only, a single AI model tested, student (not professional) interviewers as comparators, and only political topics covered.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card caution" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity caution">Key Finding</span>
+          <span class="failure-source">LSE · Geiecke & Jaravel</span>
+        </div>
+        <h3 class="failure-title">AI Interviews Rated "Comparable to Average Human Expert"</h3>
+        <p class="failure-desc">Open-source platform tested across three subject areas. Harvard and LSE PhD students rated the AI output. 142% increase in word count versus conventional open text.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Discovery</p>
+          <p class="evidence-text">The study surfaced unanticipated findings — such as pet care as a source of life meaning comparable to religion — demonstrating AI's capacity for genuine discovery. 50% of French voter respondents preferred the AI chatbot for sharing personal political views, citing its non-judgmental quality.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card serious" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity serious">Sobering</span>
+          <span class="failure-source">Nesta / BIT · October 2024</span>
+        </div>
+        <h3 class="failure-title">"One Human Interview Surfaces More Than Dozens of AI"</h3>
+        <p class="failure-desc">~200 AI interviews compared against human moderation. The single most sobering finding in the field.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Evidence</p>
+          <p class="evidence-text">Many AI interview answers were only a few words long. Average AI interview length was ~15 minutes versus 30–60 for human interviews. The experience was described as "more akin to open-ended questions from traditional surveys, rather than 1-2-1 interviews." <strong>A single skilled human interview can surface as many, if not more, valuable insights as dozens of AI-led conversations.</strong></p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card critical" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity critical">Critical</span>
+          <span class="failure-source">Ipsos · ESOMAR North America 2025</span>
+        </div>
+        <h3 class="failure-title">Ipsos "Mind or Machines" — The Gold Standard Evaluation</h3>
+        <p class="failure-desc">Multi-country pilot study. Blind evaluations by expert human moderators. The most methodologically rigorous independent assessment published.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Verdict</p>
+          <p class="evidence-text">Standard AI moderators performed <strong>poorly</strong> on building rapport, improvising beyond the script, adapting to unique communication styles, and detecting unarticulated nuances. Even enhanced AI moderators with behavioural frameworks still fell short of humans in uncovering deep insights by following "emotional breadcrumbs." <strong>Conclusion: "The most effective approach is a hybrid model in which AI acts as a co-moderator."</strong></p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card structural" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity structural">Granular</span>
+          <span class="failure-source">Nielsen Norman Group · January 2026</span>
+        </div>
+        <h3 class="failure-title">NN/g: Only 3 of 10 Said "Conversation Felt Natural"</h3>
+        <p class="failure-desc">Testing two AI interviewers (Marvin and UserFlix) with 10 participants. The most detailed failure documentation available.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Specific Failures</p>
+          <p class="evidence-text">UserFlix frequently interrupted participants mid-sentence. Marvin had lengthy unexplained pauses. Both asked questions participants had already answered. Interview lengths ranged from 13 to 56 minutes with no time management. Only 5 of 10 felt comfortable. Participants craved nonverbal feedback: "I was expecting to see some kind of human form rather than being such a frigid experience."</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="dark-section">
+        <h2 class="section-label">Important Methodological Caveat</h2>
+        <div class="principles-grid" style="grid-template-columns: 1fr;">
+          <div>
+            <p class="principle-desc" style="font-size:16px; max-width:800px;">The vast majority of performance claims come from AI platform vendors with commercial interests. Conveo's 83% greater openness, Outset's 10–20× scale, and Glaut's comparative studies are all company-produced content. <strong style="color:var(--amber-light);">No formal independent replication studies</strong> of foundational AI interview papers have been published. No meta-analyses exist. The evidence base is dominated by single studies with small, non-representative samples, limited to text-based interaction, and mostly from a single year (2024).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== TAB 5: LIMITATIONS ========== -->
+  <div id="limitations" class="tab-content">
+    <section>
+      <h2 class="section-label">Visualise: The Depth Ceiling — Human vs. AI Moderation</h2>
+      <p style="font-size:15px; font-family:'DM Sans',sans-serif; color:var(--text-muted); line-height:1.7; margin-bottom:20px; max-width:700px;">
+        Click to compare how human and AI moderators perform across different layers of qualitative insight depth.
+      </p>
+      <div class="depth-viz">
+        <div class="depth-controls">
+          <button class="depth-btn active" onclick="setDepthMode('human', this)">👤 Human Moderator</button>
+          <button class="depth-btn" onclick="setDepthMode('ai', this)">🤖 AI Moderator</button>
+          <button class="depth-btn" onclick="setDepthMode('compare', this)">⚖️ Compare Both</button>
+        </div>
+        <div class="depth-layers" id="depthLayers"></div>
+        <div class="depth-insight" id="depthInsight">
+          <strong>Human moderators</strong> excel across all layers of insight depth — from surface-level data collection through to breakthrough discoveries. Their ability to follow "emotional breadcrumbs," recognize when a superficial answer conceals deeper meaning, and navigate cultural nuance remains unmatched.
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Five Structural Limitations — Click for Evidence</h2>
+
+      <div class="failure-card critical" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity critical">Structural</span>
+        </div>
+        <h3 class="failure-title">The Sycophancy Problem</h3>
+        <p class="failure-desc">AI systems are trained to validate users rather than challenge them. When a participant contradicts themselves, the AI is unlikely to probe the inconsistency.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Evidence</p>
+          <p class="evidence-text">When a participant says "I never buy premium brands" and later says "I always choose the premium option," the AI won't challenge this. Glaut has addressed this by building a separate "consistency check agent" that runs post-interview — an implicit acknowledgment that the AI moderator itself cannot handle contradictions in real time. The sycophantic architecture affirms rather than challenges — directly opposing what skilled moderators do.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card serious" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity serious">Bias</span>
+        </div>
+        <h3 class="failure-title">Cultural & Linguistic Bias</h3>
+        <p class="failure-desc">LLM output "tends to resemble Western cultures when prompted without a specific cultural identity" (PNAS Nexus 2024).</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Evidence</p>
+          <p class="evidence-text">A Nature 2025 study on Kenyan focus group data found performance was notably weaker with male participants who used "euphemisms and local vernacular." Indian transcripts receive consistently lower AI scores than UK transcripts even when anonymized. An arXiv study confirmed LLMs "systematically homogenize moral diversity" — increased model size doesn't help. Best-performing LLMs achieve only ~0.70 F1 on sarcasm detection, and Chinese participants understand sarcasm differently from Americans.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card caution" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity caution">Technical</span>
+        </div>
+        <h3 class="failure-title">The Depth Ceiling</h3>
+        <p class="failure-desc">AI lacks domain knowledge to judge which threads are worth pursuing, misses nonverbal cues entirely, and cannot balance time vs. depth.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Naether's Example</p>
+          <p class="evidence-text">In a banking product discussion, a participant verbally claimed to want "the cheapest offer" while displaying skeptical body posture. Through human probing, the moderator discovered "cheap" actually meant a balanced relationship between performance, trust, and cost — an insight <strong>entirely invisible to AI</strong>. Tellet estimates that for single-topic research, human moderators reach saturation in ~5 interviews while AI needs ~30.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card structural" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity structural">Dynamic</span>
+        </div>
+        <h3 class="failure-title">Adaptive Dialogue Weakness</h3>
+        <p class="failure-desc">While LLMs demonstrate strong question formulation in controlled environments, they consistently struggle with adaptive dialogue — the core skill of qualitative moderation.</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">Evidence</p>
+          <p class="evidence-text">Järvilehto et al. (2025) compared GPT-4 and Llama-2 for investigative interviewing. In static question formulation, GPT-4 generated 67.8% open-ended invitations vs. just 5.4% for psychologists. But in dynamic adaptive conversation, all LLMs used fewer recommended questions (mean 8.69 vs. 18.75 for professionals) and more non-recommended questions (17.69 vs. 6.81). The core skill gap is in real-time adaptation.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+
+      <div class="failure-card serious" onclick="toggleFailure(this)">
+        <div class="failure-header">
+          <span class="failure-severity serious">Ethical</span>
+        </div>
+        <h3 class="failure-title">Erosion of Moderation Skills</h3>
+        <p class="failure-desc">"An excessive shift to AI-supported systems could lead to an erosion of basic moderation skills, similar to how GPS weakened our inner sense of direction." — Naether</p>
+        <div class="failure-evidence">
+          <p class="evidence-label">The Pipeline Problem</p>
+          <p class="evidence-text">If AI takes over all junior-level work, how do new researchers gain experience? As Delve articulates: "We view it as the most likely negative impact of AI in qualitative research." A 2025 study found a clear generational divide: early-career researchers embrace AI for scale, while experienced researchers express skepticism about its impact on reflexivity. The risk of producing researchers who cannot moderate without technology is real.</p>
+        </div>
+        <p class="failure-toggle">Click for evidence ▼</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Sector-Specific Adoption — Click to Explore</h2>
+      <div class="sector-grid" id="sectorGrid">
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">💻</div>
+          <div class="sector-name">Technology & UX</div>
+          <span class="sector-adoption high">Highest Adoption</span>
+          <p class="sector-desc">80% of UX researchers now use AI tools (up 24% YoY).</p>
+          <div class="sector-expanded"><strong>Critical warning from NN/g:</strong> "Avoid using AI tools to moderate usability tests; AI tools are not yet capable of actually knowing what users are doing." AI analyzes transcripts, not actual user behaviour. UXArmy reports AI follow-ups generate 70%+ of final insights in product feedback contexts.</div>
+        </div>
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">🛒</div>
+          <div class="sector-name">FMCG & CPG</div>
+          <span class="sector-adoption high">Natural Sweet Spot</span>
+          <p class="sector-desc">High-volume consumer research with less regulatory complexity.</p>
+          <div class="sector-expanded">Conveo is used by Unilever, AB InBev, P&G, and General Mills. The global AI-in-consumer-goods market is projected to grow from $3.1B (2023) to $37.3B by 2032 at 31.8% CAGR. <strong>Risk:</strong> "A 'healthy snack' concept that resonates in California might completely miss the mark in Shanghai."</div>
+        </div>
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">💊</div>
+          <div class="sector-name">Healthcare & Pharma</div>
+          <span class="sector-adoption medium">Complex</span>
+          <p class="sector-desc">Most complex deployment environment. Adverse event reporting is mandatory.</p>
+          <div class="sector-expanded">Glaut embedded AI voice interviews within quant surveys for 925 healthcare professionals across six KPIs. <strong>Critical differentiator:</strong> pharmaceutical companies are FDA-mandated to report potential adverse events from any research interaction. Any AI moderator must be programmed to recognize and flag potential AEs.</div>
+        </div>
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">🏦</div>
+          <div class="sector-name">Financial Services</div>
+          <span class="sector-adoption low">Most Cautious</span>
+          <p class="sector-desc">Some institutions have "prohibited AI usage altogether."</p>
+          <div class="sector-expanded">Regulatory complexity spanning SEC, FCA, CFPB, OCC, and FDIC requirements. The most documented use case: insurance brokers valued the AI's immediacy — the ability to participate instantly rather than scheduling weeks out.</div>
+        </div>
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">🗳️</div>
+          <div class="sector-name">Political Research</div>
+          <span class="sector-adoption low">Existential Risk</span>
+          <p class="sector-desc">AI chatbots can shift voter preferences by 10+ percentage points.</p>
+          <div class="sector-expanded">Cornell research found the most optimized AI model shifted opposition voters by 25 points. A Dartmouth study found that just 10–52 fake AI responses could flip predicted outcomes of national polls. G. Elliott Morris concluded: "LLMs are not accurate replacements for human respondents."</div>
+        </div>
+        <div class="sector-card" onclick="toggleSector(this)">
+          <div class="sector-icon">💼</div>
+          <div class="sector-name">B2B & HR Research</div>
+          <span class="sector-adoption medium">Scheduling Advantage</span>
+          <p class="sector-desc">Busy professionals can participate immediately without scheduling.</p>
+          <div class="sector-expanded">Employees may be more honest with AI for sensitive exit feedback — inFeedo's "Amber" connects with 130K employees, with engaged users 2x more likely to stay. <strong>Paradox:</strong> employees show lower acceptance of AI-delivered positive feedback due to greater perceived social distance.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========== TAB 6: DECIDE & TEST ========== -->
+  <div id="decide" class="tab-content">
+
+    <section>
+      <h2 class="section-label">Cost Comparison</h2>
+      <div class="cost-grid">
+        <div class="cost-card traditional">
+          <div class="cost-title traditional">Traditional Human-Moderated IDIs</div>
+          <div class="cost-row"><span class="cost-item">Per interview (fully loaded)</span><span class="cost-val">$250–$1,000</span></div>
+          <div class="cost-row"><span class="cost-item">Senior moderator rate</span><span class="cost-val">$200–$400/hr</span></div>
+          <div class="cost-row"><span class="cost-item">Typical 20-person study</span><span class="cost-val">$15K–$25K</span></div>
+          <div class="cost-row"><span class="cost-item">Analysis turnaround</span><span class="cost-val red">4–6 weeks</span></div>
+        </div>
+        <div class="cost-card ai-mod">
+          <div class="cost-title ai-mod">AI-Moderated Interviews</div>
+          <div class="cost-row"><span class="cost-item">Per interview (Outset/Conveo)</span><span class="cost-val green">&lt;$60</span></div>
+          <div class="cost-row"><span class="cost-item">Yazi at scale</span><span class="cost-val green">$1.60–$2.70</span></div>
+          <div class="cost-row"><span class="cost-item">Nestlé reported savings</span><span class="cost-val green">81% reduction</span></div>
+          <div class="cost-row"><span class="cost-item">First-coded themes</span><span class="cost-val green">Same day</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="decision-tool">
+        <h2 class="section-label">Interactive Decision Tree: Should You Use AI Moderation?</h2>
+        <div id="decisionContent"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="section-label">Test Your Understanding</h2>
+      <div class="quiz-score" id="quizScore">
+        <div class="quiz-score-num" id="scoreNum">0/5</div>
+        <div class="quiz-score-label" id="scoreLabel"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz="0">
+        <p class="quiz-q">1. According to the NN/g January 2026 study, how many of the 10 participants agreed "the conversation felt natural" with AI interviewers?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">7 of 10 — most found it natural</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">5 of 10 — roughly half</button>
+          <button class="quiz-opt" data-correct="true" onclick="answerQuiz(this)">3 of 10 — a clear minority</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">1 of 10 — almost nobody</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz="1">
+        <p class="quiz-q">2. What did the Ipsos "Mind or Machines" study conclude is the most effective approach to AI moderation?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Fully autonomous AI moderators outperform humans on all measures</button>
+          <button class="quiz-opt" data-correct="true" onclick="answerQuiz(this)">A hybrid model in which AI acts as a co-moderator alongside humans</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI should only be used for analysis, never for interviewing</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Enhanced AI moderators with behavioural frameworks match human depth</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz="2">
+        <p class="quiz-q">3. Why is the "sycophancy problem" structurally dangerous for AI-moderated qualitative research?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI moderators are too formal and create uncomfortable distance</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI moderators ask too many probing questions per answer</button>
+          <button class="quiz-opt" data-correct="true" onclick="answerQuiz(this)">AI is trained to validate rather than challenge, so contradictions go unprobed</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI moderators refuse to discuss sensitive or emotional topics</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz="3">
+        <p class="quiz-q">4. What practical step at Glassdoor doubled AI interview session length and eliminated drop-offs?</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Using video instead of text-only interviews</button>
+          <button class="quiz-opt" data-correct="true" onclick="answerQuiz(this)">Including the researcher's name in the AI disclosure message</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Offering monetary incentive bonuses for longer sessions</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Adding an avatar to make the AI seem more human-like</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz="4">
+        <p class="quiz-q">5. The Nesta/BIT experiment's most sobering finding about AI versus human interviewing was:</p>
+        <div class="quiz-options">
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI interviews cost more than expected, reducing the ROI case</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">Participants refused to engage with AI moderators at all</button>
+          <button class="quiz-opt" data-correct="true" onclick="answerQuiz(this)">A single skilled human interview surfaced as many insights as dozens of AI interviews</button>
+          <button class="quiz-opt" data-correct="false" onclick="answerQuiz(this)">AI moderators produced identical responses across all participants</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="dark-section">
+        <h2 class="section-label">The Bottom Line</h2>
+        <div class="principles-grid">
+          <div>
+            <div class="principle-icon">✅</div>
+            <h3 class="principle-title">AI Moderation Excels At</h3>
+            <p class="principle-desc">Scale and consistency across hundreds of interviews. Real-time coding and multilingual deployment. Time-critical research (days not weeks). Sensitive topics where anonymity improves candor. Standardized evaluative questions. Continuous discovery programs.</p>
+          </div>
+          <div>
+            <div class="principle-icon">⚠️</div>
+            <h3 class="principle-title">Use Hybrid Approaches For</h3>
+            <p class="principle-desc">Moderate-complexity topics. Phased designs (AI screening → human depth). Studies requiring both scale and interpretive nuance. Building organisational confidence through parallel validation.</p>
+          </div>
+          <div>
+            <div class="principle-icon">🚫</div>
+            <h3 class="principle-title">Keep Humans For</h3>
+            <p class="principle-desc">Highly exploratory research. Physical-presence contexts (ethnography, prototyping). High-stakes executive interviews. Sensitive topics (trauma, health, discrimination). Co-design sessions. Research requiring relationship-building over time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-avatar">AI</div>
+    <div>
+      <p class="footer-title">AI Interviewing in Market Research — Interactive Explorer</p>
+      <p class="footer-subtitle">Compiled February 2026 · Sources include Ipsos, NN/g, ESOMAR, LMU Munich, Nesta/BIT, academic papers</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ============================================
+  // Tab Navigation
+  // ============================================
+  const tabs = document.querySelectorAll('.nav-btn');
+  const visited = new Set(['foundations']);
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tabId = btn.dataset.tab;
+      visited.add(tabId);
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      updateProgress();
+      tabs.forEach(b => {
+        if (visited.has(b.dataset.tab) && !b.classList.contains('active')) b.classList.add('completed');
+        else b.classList.remove('completed');
+      });
+      if (tabId === 'implementation') setTimeout(animateCompBars, 300);
+      if (tabId === 'limitations') setTimeout(() => renderDepth('human'), 300);
+    });
+  });
+
+  function updateProgress() {
+    const pct = Math.round((visited.size / 6) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+  }
+
+  // ============================================
+  // Card Toggles
+  // ============================================
+  function toggleProcess(el) {
+    const wasActive = el.classList.contains('active');
+    el.parentElement.querySelectorAll('.process-card').forEach(c => {
+      c.classList.remove('active');
+      const tog = c.querySelector('.process-toggle');
+      if (tog) tog.textContent = 'Click to expand ▼';
+    });
+    if (!wasActive) {
+      el.classList.add('active');
+      el.querySelector('.process-toggle').textContent = 'Click to collapse ▲';
+    }
+  }
+
+  function toggleFailure(el) {
+    const wasActive = el.classList.contains('active');
+    document.querySelectorAll('.failure-card').forEach(c => {
+      c.classList.remove('active');
+      const tog = c.querySelector('.failure-toggle');
+      if (tog) tog.textContent = 'Click for evidence ▼';
+    });
+    if (!wasActive) {
+      el.classList.add('active');
+      el.querySelector('.failure-toggle').textContent = 'Hide evidence ▲';
+    }
+  }
+
+  function toggleSector(el) {
+    const wasActive = el.classList.contains('active');
+    document.querySelectorAll('.sector-card').forEach(c => c.classList.remove('active'));
+    if (!wasActive) el.classList.add('active');
+  }
+
+  // ============================================
+  // Hybrid Models
+  // ============================================
+  const hybridData = [
+    { title: 'AI First-Line Probing with Human Deep Follow-Up', text: 'Particularly effective for asynchronous diary studies where AI probes while participants are still online, and humans add depth later. The AI handles initial engagement and captures immediate reactions at scale, while human researchers identify the most promising threads for deeper exploration. This model preserves spontaneity while ensuring interpretive depth on the insights that matter most.' },
+    { title: 'Parallel Validation Studies', text: 'Spotify ran the same study with both AI and human moderation for six months to build confidence in AI quality for specific question types. This is the gold standard for organisational adoption — running identical studies in parallel builds an empirical evidence base specific to your research context, topics, and audiences. High upfront cost, but invaluable for de-risking future deployments.' },
+    { title: 'Human Exploration → AI Validation', text: 'Humans conduct initial exploratory interviews (15–30 participants) and AI then scales findings across larger samples (100–500+) or multiple markets. The most sophisticated practitioners use this model: human-moderated discovery with 20 participants, followed by AI-moderated validation with 500. The human phase generates hypotheses; the AI phase quantifies and segments them.' },
+    { title: 'AI Infrastructure with Human Analysis', text: 'AI handles scheduling, transcription, and initial coding while humans focus on interpretation and storytelling. This is the lowest-risk entry point — it automates the 85% of analysis time spent on administrative tasks without touching the interpretive layer. Benchmark data suggests hybrid moderation systems achieve 35% higher accuracy than AI-only approaches while processing content 10× faster than human-only.' },
+    { title: 'The Augmented Moderator', text: 'AI assistance systems support human moderators during live discussions with real-time suggestions for follow-up questions and overlooked topics. The human maintains full control of the conversation while AI acts as an always-alert research assistant, flagging gaps in topic coverage, surfacing relevant participant quotes, and suggesting probes the moderator might not have considered. This preserves all the advantages of human rapport and intuition.' }
+  ];
+
+  function selectHybrid(idx, el) {
+    document.querySelectorAll('.hybrid-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const d = hybridData[idx];
+    document.getElementById('hybridDetail').innerHTML = `<h3 class="hybrid-detail-title">${d.title}</h3><p class="hybrid-detail-text">${d.text}</p>`;
+  }
+
+  // ============================================
+  // Comparison Bars Animation
+  // ============================================
+  let compAnimated = false;
+  function animateCompBars() {
+    if (compAnimated) return;
+    compAnimated = true;
+    const tradVals = [18, 48, 30, 60];
+    const aiVals = [80, 100, 100, 12];
+    tradVals.forEach((v, i) => { document.getElementById('tradBar' + (i+1)).style.width = v + '%'; });
+    aiVals.forEach((v, i) => { document.getElementById('aiBar' + (i+1)).style.width = v + '%'; });
+  }
+
+  // ============================================
+  // Depth Ceiling Visualization
+  // ============================================
+  const depthLayers = [
+    { name: 'Surface Responses', human: 95, ai: 90, note: 'Both perform well here' },
+    { name: 'Structured Follow-up', human: 92, ai: 82, note: 'AI handles standard probes' },
+    { name: 'Emotional Cues', human: 88, ai: 45, note: 'AI misses nonverbal signals' },
+    { name: 'Contradiction Probing', human: 85, ai: 25, note: 'Sycophancy blocks this' },
+    { name: 'Cultural Nuance', human: 80, ai: 30, note: 'Western-centric training data' },
+    { name: 'Unarticulated Needs', human: 75, ai: 15, note: '"Emotional breadcrumbs"' },
+    { name: 'Breakthrough Insight', human: 60, ai: 8, note: '"Peeling the onion"' }
+  ];
+
+  const depthInsights = {
+    human: '<strong>Human moderators</strong> excel across all layers of insight depth — from surface-level data collection through to breakthrough discoveries. Their ability to follow "emotional breadcrumbs," recognize when a superficial answer conceals deeper meaning, and navigate cultural nuance with genuine sensitivity remains unmatched by any current AI system.',
+    ai: '<strong>AI moderators</strong> perform well at surface and structured levels but drop off dramatically below the third layer. The depth ceiling stems from five compounding factors: lack of domain knowledge, inability to balance time vs. depth, missing nonverbal cues, sycophantic architecture, and context window limitations. This is not a temporary limitation — it is structural.',
+    compare: '<strong>The gap widens with depth.</strong> At surface level, AI performs at ~95% of human capability. By the "breakthrough insight" layer, AI drops to just ~13% of human performance. This is why Ipsos concluded hybrid models outperform AI-only: let AI handle the breadth at surface levels, and reserve human depth for the layers where it matters most.'
+  };
+
+  function renderDepth(mode) {
+    const container = document.getElementById('depthLayers');
+    let html = '';
+    depthLayers.forEach((layer, i) => {
+      if (mode === 'compare') {
+        html += `<div class="depth-layer">
+          <div class="depth-layer-num">${i+1}</div>
+          <div class="depth-layer-name">${layer.name}</div>
+          <div style="flex:1;">
+            <div class="depth-layer-bar" style="margin-bottom:4px;"><div class="depth-layer-fill human" style="width:${layer.human}%"></div></div>
+            <div class="depth-layer-bar"><div class="depth-layer-fill ai" style="width:${layer.ai}%"></div></div>
+          </div>
+          <div class="depth-layer-note">${layer.note}</div>
+        </div>`;
+      } else {
+        const val = mode === 'human' ? layer.human : layer.ai;
+        const cls = mode === 'human' ? 'human' : 'ai';
+        html += `<div class="depth-layer">
+          <div class="depth-layer-num">${i+1}</div>
+          <div class="depth-layer-name">${layer.name}</div>
+          <div class="depth-layer-bar"><div class="depth-layer-fill ${cls}" style="width:${val}%"></div></div>
+          <div class="depth-layer-note">${layer.note}</div>
+        </div>`;
+      }
+    });
+    container.innerHTML = html;
+    document.getElementById('depthInsight').innerHTML = depthInsights[mode];
+  }
+
+  function setDepthMode(mode, btn) {
+    document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDepth(mode);
+  }
+
+  // Init depth
+  renderDepth('human');
+
+  // ============================================
+  // Decision Tree
+  // ============================================
+  const decisionTree = [
+    {
+      q: "What is the primary goal of your research?",
+      opts: [
+        { text: "Scale validated findings across large samples or multiple markets", next: 1 },
+        { text: "Deep exploratory discovery — uncovering things we don't know yet", next: "stop1" },
+        { text: "Standardized evaluation (concept test, message test, UX feedback)", next: 2 }
+      ]
+    },
+    {
+      q: "How sensitive is the topic?",
+      opts: [
+        { text: "Standard consumer topics — products, brands, shopping behaviour", next: 3 },
+        { text: "Sensitive topics — health, finances, identity, trauma", next: "caution1" },
+        { text: "High-stakes — executive interviews or billion-dollar decisions", next: "stop2" }
+      ]
+    },
+    {
+      q: "Do you have human-moderated pilot data to benchmark against?",
+      opts: [
+        { text: "Yes — we've run human interviews first or in parallel", next: "go1" },
+        { text: "No — but we can pilot with 5–10 human interviews first", next: "go2" },
+        { text: "No — we want AI-only from start to finish", next: "caution2" }
+      ]
+    },
+    {
+      q: "What scale are you targeting?",
+      opts: [
+        { text: "50–200 interviews across 1–3 markets", next: "go3" },
+        { text: "200–500+ interviews or 5+ markets simultaneously", next: "go4" },
+        { text: "Under 30 interviews — depth matters more than scale", next: "stop3" }
+      ]
+    }
+  ];
+
+  const results = {
+    go1: { cls: 'go', title: '✅ Strong Fit — Hybrid Validation Model', text: 'You have the ideal setup. Use human interviews to establish ground truth, then scale with AI moderation. This is the approach Ipsos, Spotify, and leading practitioners recommend. Expect 75–81% cost savings on the scaled portion while maintaining interpretive quality on the human-led discovery phase.' },
+    go2: { cls: 'go', title: '✅ Good Fit — Pilot First', text: 'Run 5–10 human-moderated interviews to establish your benchmark, then scale with AI. This two-stage model (human discovery → AI validation) is the emerging best practice. Great Question recommends this iterative approach. Budget 2–3 rounds of guide refinement before full launch.' },
+    go3: { cls: 'go', title: '✅ AI Moderation Sweet Spot', text: 'Standard consumer topics at moderate scale are where AI moderation delivers the clearest ROI. Expect same-day first-coded themes, consistent probing across all interviews, and 75–81% cost reduction. Use Qualtrics Conversational Feedback for survey integration, or Outset/Conveo for standalone interviews.' },
+    go4: { cls: 'go', title: '✅ Maximum AI Advantage', text: 'At this scale, AI moderation is transformative. Dairy Farmers of Wisconsin discovered entirely new sustainability messaging angles from 500 AI interviews. WeightWatchers synthesized 100 IDIs in 24 hours. Multilingual deployment and cross-market analysis are particular strengths. Budget for robust QC — Focaldata removes 35% of their sample through seven quality layers.' },
+    caution1: { cls: 'caution', title: '⚠️ Proceed with Extreme Caution', text: 'Sensitive topics are where AI moderation has the highest risk of harm and the lowest evidence of quality. ESOMAR and the ICC Code specify extra precautions for vulnerable populations. Counterintuitively, some research shows participants may be more open with AI on sensitive topics — but the AI cannot detect emotional distress or provide appropriate support. Use a human-supervised AI model at minimum.' },
+    caution2: { cls: 'caution', title: '⚠️ High Risk Without Benchmarking', text: 'Without human data to benchmark against, you cannot know if AI-generated insights are accurate for your specific context. The Nesta/BIT experiment found a single skilled human interview surfaces more insights than dozens of AI interviews. At minimum, include a small human validation sample. Only 31% of researchers rate AI-only results as "great."' },
+    stop1: { cls: 'stop', title: '🚫 Keep Humans in the Lead', text: 'Deep exploratory discovery is where human moderators are irreplaceable. The "peeling the onion" technique — recognizing when a superficial answer deserves deeper exploration — is "the true art of qualitative moderation" and is entirely beyond current AI capabilities. Use AI for infrastructure (scheduling, transcription, initial coding) but keep humans in the moderator seat.' },
+    stop2: { cls: 'stop', title: '🚫 Human Moderation Essential', text: 'For executive interviews and billion-dollar decisions, AI moderation carries unacceptable risk. The depth ceiling, sycophancy problem, and inability to manage complex interpersonal dynamics make AI unsuitable for high-stakes contexts. The cost of traditional moderation ($250–$1,000 per interview) is trivial relative to the decision value.' },
+    stop3: { cls: 'stop', title: '🚫 Human Moderation is More Efficient Here', text: 'Under 30 interviews is traditional qualitative territory where human moderation is already efficient. AI moderation\'s advantages are in scale — at low volumes, the setup cost (guide engineering, pilot testing) may exceed the savings. Human moderators reach thematic saturation in ~9 interviews and meaning saturation in ~24. This is their sweet spot.' }
+  };
+
+  let currentStep = 0;
+
+  function renderDecision() {
+    const el = document.getElementById('decisionContent');
+    if (typeof currentStep === 'number') {
+      const step = decisionTree[currentStep];
+      let html = `<p class="decision-q">${step.q}</p><div class="decision-options">`;
+      step.opts.forEach(opt => {
+        html += `<button class="decision-btn" onclick="selectDecision(${typeof opt.next === 'number' ? opt.next : "'" + opt.next + "'"})"><span style="opacity:0.5;margin-right:8px;">→</span>${opt.text}</button>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    } else {
+      const r = results[currentStep];
+      el.innerHTML = `
+        <div class="decision-result ${r.cls}">
+          <p style="font-size:18px;font-weight:600;margin-bottom:10px;font-family:'Playfair Display',serif;">${r.title}</p>
+          <p>${r.text}</p>
+        </div>
+        <button class="decision-restart" onclick="restartDecision()">↻ Start Over</button>
+      `;
+    }
+  }
+
+  function selectDecision(next) { currentStep = next; renderDecision(); }
+  function restartDecision() { currentStep = 0; renderDecision(); }
+  renderDecision();
+
+  // ============================================
+  // Quiz
+  // ============================================
+  let quizAnswered = 0, quizCorrect = 0;
+  const feedbacks = [
+    { correct: 'Only 3 of 10 agreed the conversation felt natural. UserFlix interrupted participants mid-sentence, Marvin had lengthy pauses, and participants craved nonverbal feedback — a stark reality check for the technology.', incorrect: 'The answer is 3 of 10. The NN/g study is one of the most granular failure documentations available, revealing that natural conversation remains a significant challenge for AI interviewers.' },
+    { correct: 'Ipsos concluded that hybrid models outperform AI-only approaches — the most defensible evidence base for implementation decisions. Even enhanced AI moderators with behavioural frameworks still fell short of humans on emotional depth.', incorrect: 'Ipsos concluded that "the most effective approach is a hybrid model in which AI acts as a co-moderator." This is the gold standard independent evaluation, and its hybrid conclusion provides the most defensible evidence base.' },
+    { correct: 'The sycophancy problem means AI affirms rather than challenges. When a participant contradicts themselves, the AI won\'t probe the inconsistency — it validates both statements. This directly undermines the core skill of qualitative moderation.', incorrect: 'The sycophancy problem is structural: AI systems are trained to validate users rather than challenge them. Contradictions go unprobed because the AI\'s architecture optimizes for user satisfaction, not insight generation.' },
+    { correct: 'A simple but powerful finding: including the researcher\'s name in AI disclosures doubled session length and eliminated drop-offs at Glassdoor. Transparency about the human behind the AI dramatically improves engagement.', incorrect: 'Great Question documented that at Glassdoor, including the researcher\'s name in AI disclosures doubled session length and eliminated drop-offs — a practical insight with outsized impact.' },
+    { correct: 'The Nesta/BIT experiment found that "just one human-led interview could surface as many, if not more, valuable insights as dozens of AI-led interviews." Many AI answers were only a few words long and felt more like survey responses than interviews.', incorrect: 'Nesta/BIT\'s finding that a single skilled human interview matched or exceeded dozens of AI interviews is the most sobering data point in the field — and a critical input for any deployment decision.' }
+  ];
+
+  function answerQuiz(btn) {
+    const card = btn.closest('.quiz-card');
+    const idx = parseInt(card.dataset.quiz);
+    const isCorrect = btn.dataset.correct === 'true';
+    const fb = card.querySelector('.quiz-feedback');
+
+    card.querySelectorAll('.quiz-opt').forEach(o => {
+      o.classList.add('disabled');
+      if (o.dataset.correct === 'true') o.classList.add('correct');
+      else if (o === btn && !isCorrect) o.classList.add('incorrect');
+    });
+
+    fb.classList.add('show');
+    if (isCorrect) { quizCorrect++; fb.classList.add('correct'); fb.textContent = '✓ ' + feedbacks[idx].correct; }
+    else { fb.classList.add('incorrect'); fb.textContent = '✗ ' + feedbacks[idx].incorrect; }
+
+    quizAnswered++;
+    if (quizAnswered === 5) {
+      const scoreEl = document.getElementById('quizScore');
+      scoreEl.style.display = 'flex';
+      document.getElementById('scoreNum').textContent = quizCorrect + '/5';
+      const labels = ['Keep exploring — revisit the earlier tabs!', 'Some gaps to fill — try the Evidence and Limitations tabs.', 'Solid foundation — you understand the key dynamics.', 'Strong grasp of the nuance that matters for deployment.', 'Excellent — you could brief a stakeholder on AI moderation.', 'Perfect — you understand both the promise and the limitations.'];
+      document.getElementById('scoreLabel').textContent = labels[quizCorrect];
+    }
+  }
+
+  // ============================================
+  // Checklist
+  // ============================================
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+    const total = document.querySelectorAll('.checklist-item').length;
+    const checked = document.querySelectorAll('.checklist-item.checked').length;
+    document.getElementById('checkProgressFill').style.width = (checked / total * 100) + '%';
+    document.getElementById('checkProgressLabel').textContent = checked + '/' + total;
+  }
+</script>
+
+</body>
+</html>
