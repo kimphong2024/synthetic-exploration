@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Twin: Synthetic Population Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --charcoal: #282E2A;
+  --olive: #4E5A2B;
+  --brown: #AC7222;
+  --golden-brown: #D3963E;
+  --mustard: #E1B83B;
+  --light-mustard: #EDC95D;
+  --cream: #FAF7F2;
+  --warm-white: #FFFEF9;
+  --light-olive: #F5F6F0;
+  --text-muted: #6B7264;
+  --text-light: #9A9A8A;
+  --urgent-red: #C44536;
+  --high-orange: #E07A3A;
+  --medium-yellow: #E1B83B;
+  --watch-blue: #5B8A9A;
+  --success-green: #4E7A2B;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Lexend', sans-serif;
+  background: var(--warm-white);
+  color: var(--charcoal);
+  overflow: hidden;
+  height: 100vh; width: 100vw;
+}
+
+.sans { font-family: system-ui, -apple-system, sans-serif; }
+
+.deck { position: relative; width: 100vw; height: 100vh; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 60px 80px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(12px);
+  overflow: hidden;
+  background: var(--warm-white);
+}
+.slide.active {
+  opacity: 1; pointer-events: auto; transform: translateY(0);
+}
+
+/* Typography */
+.mega {
+  font-size: clamp(40px,5vw,64px); font-weight: 400;
+  line-height: 1.1; color: var(--charcoal);
+}
+.hero {
+  font-size: clamp(28px,3.2vw,44px); font-weight: 400;
+  line-height: 1.15; color: var(--charcoal);
+}
+.title {
+  font-size: clamp(20px,2.2vw,30px); font-weight: 600; line-height: 1.2;
+}
+.subtitle {
+  font-size: clamp(15px,1.2vw,18px); font-weight: 400;
+  line-height: 1.7; color: var(--text-muted); font-family: system-ui, sans-serif;
+}
+.body-text {
+  font-size: clamp(13px,1vw,15px); font-weight: 400;
+  line-height: 1.8; color: var(--text-muted); font-family: system-ui, sans-serif;
+}
+.label {
+  font-size: 11px; font-weight: 600; font-family: system-ui, sans-serif;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted);
+}
+
+.text-brown { color: var(--brown); }
+.text-olive { color: var(--olive); }
+.text-mustard { color: var(--mustard); }
+.text-green { color: var(--success-green); }
+.text-red { color: var(--urgent-red); }
+.text-blue { color: var(--watch-blue); }
+.text-orange { color: var(--high-orange); }
+
+/* Tags */
+.tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 14px; border-radius: 100px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase;
+  font-family: system-ui, sans-serif;
+}
+.tag-olive { background: rgba(78,90,43,0.12); color: var(--olive); }
+.tag-brown { background: rgba(172,114,34,0.12); color: var(--brown); }
+.tag-mustard { background: rgba(225,184,59,0.15); color: var(--brown); }
+.tag-green { background: rgba(78,122,43,0.12); color: var(--success-green); }
+.tag-red { background: rgba(196,69,54,0.12); color: var(--urgent-red); }
+.tag-blue { background: rgba(91,138,154,0.12); color: var(--watch-blue); }
+.tag-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* Divider */
+.divider {
+  width: 50px; height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--olive), var(--brown), var(--mustard));
+}
+
+/* Gradient bar */
+.gradient-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--olive), var(--brown), var(--mustard));
+}
+
+/* Cards */
+.card {
+  background: var(--cream); border-radius: 16px; padding: 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40,46,42,0.06);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(40,46,42,0.1);
+}
+
+/* Stat cards */
+.stat-card {
+  position: relative; overflow: hidden; border-radius: 16px; padding: 24px 28px;
+  box-shadow: 0 4px 20px rgba(40,46,42,0.12); transition: all 0.5s ease;
+}
+.stat-card:hover { transform: scale(1.02) translateY(-4px); }
+.stat-card.charcoal { background: linear-gradient(135deg, var(--charcoal) 0%, #3a4038 100%); color: var(--cream); }
+.stat-card.olive { background: linear-gradient(135deg, var(--olive) 0%, #5d6a34 100%); color: var(--cream); }
+.stat-card.mustard { background: linear-gradient(135deg, var(--mustard) 0%, var(--golden-brown) 100%); color: var(--charcoal); }
+.stat-card.brown { background: linear-gradient(135deg, var(--brown) 0%, #8a5a1a 100%); color: var(--cream); }
+
+.stat-card-circle {
+  position: absolute; right: -32px; top: -32px; width: 128px; height: 128px;
+  border-radius: 50%; opacity: 0.1;
+}
+.stat-card.charcoal .stat-card-circle, .stat-card.brown .stat-card-circle { background: var(--mustard); }
+.stat-card.olive .stat-card-circle { background: var(--light-mustard); }
+.stat-card.mustard .stat-card-circle { background: var(--charcoal); }
+
+.stat-value { font-size: 36px; font-weight: 600; line-height: 1; margin-bottom: 6px; }
+.stat-label { font-size: 13px; font-family: system-ui, sans-serif; opacity: 0.85; }
+
+/* Citation Box */
+.cite {
+  padding: 16px 20px; border-radius: 0 12px 12px 0;
+  border-left: 4px solid var(--brown); background: var(--cream);
+  margin: 12px 0;
+}
+.cite .quote {
+  font-size: 13px; font-style: italic; color: var(--text-muted);
+  font-family: system-ui, sans-serif; line-height: 1.6;
+}
+.cite .source {
+  font-size: 11px; font-weight: 600; color: var(--brown);
+  font-family: system-ui, sans-serif; margin-top: 6px;
+}
+.cite.olive-cite { border-left-color: var(--olive); }
+.cite.olive-cite .source { color: var(--olive); }
+.cite.mustard-cite { border-left-color: var(--mustard); background: var(--light-olive); }
+.cite.mustard-cite .source { color: var(--golden-brown); }
+.cite.red-cite { border-left-color: var(--urgent-red); }
+.cite.red-cite .source { color: var(--urgent-red); }
+.cite.green-cite { border-left-color: var(--success-green); background: rgba(78,122,43,0.06); }
+.cite.green-cite .source { color: var(--success-green); }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-family: system-ui, sans-serif; font-size: 13px; }
+th {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-light);
+  padding: 8px 12px; text-align: left;
+  border-bottom: 2px solid var(--light-olive);
+}
+td { padding: 8px 12px; border-bottom: 1px solid var(--light-olive); color: var(--text-muted); }
+td strong { color: var(--charcoal); font-weight: 600; }
+
+/* Bar chart */
+.bar-row { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
+.bar-label {
+  width: 80px; text-align: right; font-size: 12px;
+  font-weight: 500; color: var(--text-muted); font-family: system-ui, sans-serif; flex-shrink: 0;
+}
+.bar-track {
+  flex: 1; height: 22px; background: var(--light-olive);
+  border-radius: 6px; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: 5px;
+  display: flex; align-items: center; padding-left: 8px;
+  font-size: 10px; font-weight: 700; color: white;
+  font-family: system-ui, sans-serif;
+}
+.bar-fill.olive-bar { background: linear-gradient(90deg, var(--olive), var(--success-green)); }
+.bar-fill.brown-bar { background: linear-gradient(90deg, var(--brown), var(--golden-brown)); }
+.bar-fill.mustard-bar { background: linear-gradient(90deg, var(--mustard), var(--light-mustard)); color: var(--charcoal); }
+.bar-fill.red-bar { background: linear-gradient(90deg, var(--high-orange), var(--urgent-red)); }
+.bar-fill.blue-bar { background: linear-gradient(90deg, #5B8A9A, #7AA8B8); }
+.bar-fill.charcoal-bar { background: linear-gradient(90deg, var(--charcoal), #3a4038); }
+
+.bar-legend { display: flex; gap: 20px; margin-bottom: 10px; font-size: 11px; color: var(--text-muted); font-family: system-ui, sans-serif; }
+.bar-legend span { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+/* Ladder */
+.ladder { display: flex; flex-direction: column; gap: 0; align-items: center; width: 100%; }
+.ladder-step {
+  width: 100%; padding: 16px 22px; text-align: center;
+  border: 1px solid var(--light-olive); border-radius: 12px;
+  background: var(--cream);
+}
+.ladder-step .step-label {
+  font-size: 10px; font-weight: 600; font-family: system-ui, sans-serif;
+  letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px;
+}
+.ladder-step .step-content {
+  font-size: 13px; font-family: system-ui, sans-serif;
+  line-height: 1.5; color: var(--text-muted);
+}
+.ladder-arrow { font-size: 16px; color: var(--brown); margin: -2px 0; z-index: 2; font-family: system-ui, sans-serif; }
+
+/* Pipeline */
+.pipeline { display: flex; gap: 0; align-items: center; flex-wrap: wrap; justify-content: center; }
+.pipe-step {
+  background: var(--cream); border: 1px solid var(--light-olive);
+  border-radius: 12px; padding: 16px 20px; text-align: center;
+  min-width: 140px; transition: all 0.3s;
+}
+.pipe-step:hover { border-color: var(--brown); box-shadow: 0 4px 12px rgba(40,46,42,0.08); }
+.pipe-step .ps-num {
+  font-size: 10px; font-weight: 600; font-family: system-ui, sans-serif;
+  letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 4px;
+}
+.pipe-step .ps-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+.pipe-step .ps-detail { font-size: 11px; color: var(--text-muted); font-family: system-ui, sans-serif; }
+.pipe-arrow { font-size: 20px; color: var(--brown); padding: 0 10px; font-family: system-ui, sans-serif; }
+
+/* Confidence bar */
+.confidence-bar { display: flex; height: 36px; border-radius: 10px; overflow: hidden; width: 100%; }
+.confidence-bar .seg {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white; font-family: system-ui, sans-serif;
+}
+
+/* Insight step card */
+.step-card {
+  background: var(--cream); border-radius: 12px; padding: 16px 20px;
+  border-left: 4px solid var(--olive); margin-bottom: 10px;
+}
+
+/* Layouts */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; width: 100%; max-width: 1100px; align-items: start; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1100px; }
+.four-col { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; width: 100%; max-width: 1100px; }
+.full-center { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 850px; }
+
+/* Code */
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+  background: var(--light-olive); padding: 2px 8px; border-radius: 4px;
+  color: var(--olive);
+}
+
+/* Decorative */
+.bg-circle {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  opacity: 0.06; background: var(--mustard);
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(24px); }
+  to { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.slide.active .anim-1 { animation: fadeUp 0.6s 0.1s both; }
+.slide.active .anim-2 { animation: fadeUp 0.6s 0.25s both; }
+.slide.active .anim-3 { animation: fadeUp 0.6s 0.4s both; }
+.slide.active .anim-4 { animation: fadeUp 0.6s 0.55s both; }
+.slide.active .anim-5 { animation: fadeUp 0.6s 0.7s both; }
+.slide.active .anim-6 { animation: fadeUp 0.6s 0.85s both; }
+
+/* Nav */
+.nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 40px;
+  background: rgba(255,254,249,0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--light-olive);
+  z-index: 100;
+}
+.nav-bar .brand {
+  font-weight: 600; font-size: 14px; color: var(--brown);
+  font-family: 'Lexend', sans-serif;
+}
+.progress-track {
+  flex: 1; max-width: 400px; height: 4px;
+  background: var(--light-olive); border-radius: 2px;
+  margin: 0 30px; cursor: pointer; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--olive), var(--brown), var(--mustard));
+  transition: width 0.4s ease;
+}
+.slide-counter {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-light); font-family: system-ui, sans-serif;
+  min-width: 60px; text-align: right;
+}
+.nav-arrows { display: flex; gap: 8px; }
+.nav-arrows button {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--light-olive); background: var(--warm-white);
+  color: var(--charcoal); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all 0.2s; font-family: system-ui, sans-serif;
+}
+.nav-arrows button:hover {
+  background: var(--brown); color: white; border-color: var(--brown);
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide active">
+  <div class="bg-circle" style="width:600px;height:600px;top:-250px;right:-200px;"></div>
+  <div class="bg-circle" style="width:400px;height:400px;bottom:-150px;left:-100px;background:var(--olive);"></div>
+  <div class="full-center" style="max-width:950px;">
+    <div class="anim-1" style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+      <div class="tag-dot" style="background:var(--mustard);"></div>
+      <span class="label">SYNTHX &times; Circles.Life</span>
+    </div>
+    <h1 class="mega anim-2" style="margin-bottom:16px;">
+      <span class="text-brown">Digital Twin</span><br>Synthetic Population Pipeline
+    </h1>
+    <div class="divider anim-3" style="margin:16px auto;"></div>
+    <p class="subtitle anim-4" style="max-width:600px;">
+      From <span class="text-olive" style="font-weight:600;">1,931 survey responses</span> to a
+      <span class="text-brown" style="font-weight:600;">10,000-row queryable</span> synthetic population
+      with preserved marginal and conditional distributions.
+    </p>
+    <div class="anim-5" style="display:flex;gap:10px;margin-top:32px;flex-wrap:wrap;justify-content:center;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>126 Variables</span>
+      <span class="tag tag-brown"><span class="tag-dot" style="background:var(--brown);"></span>Gaussian Copula</span>
+      <span class="tag tag-mustard"><span class="tag-dot" style="background:var(--mustard);"></span>Supabase + Lovable</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: Core Question -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;top:-200px;left:-150px;background:var(--olive);"></div>
+  <div class="full-center">
+    <span class="tag tag-mustard anim-1" style="margin-bottom:24px;">The Challenge</span>
+    <h2 class="hero anim-2" style="font-style:italic;max-width:750px;">
+      Two surveys with <span class="text-olive">different respondents</span>,
+      no shared IDs, and <span class="text-brown">55% missing cells</span>
+      when merged.
+    </h2>
+    <div class="divider anim-3" style="margin:24px auto;"></div>
+    <p class="subtitle anim-4" style="max-width:550px;">
+      The Profiling Survey (1,090 respondents) and Signup Survey (841 respondents) only share gender and age_group as bridge variables.
+    </p>
+  </div>
+</div>
+
+<!-- SLIDE 3: Two Surveys -->
+<div class="slide">
+  <div class="bg-circle" style="width:400px;height:400px;top:-150px;right:-100px;"></div>
+  <div style="width:100%;max-width:1080px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:30px;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>Input Data</span>
+      <h2 class="hero" style="margin-top:10px;">Two Surveys, <span class="text-brown">One Population</span></h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" class="anim-2">
+      <div class="stat-card olive">
+        <div class="stat-card-circle"></div>
+        <div class="stat-value">1,090</div>
+        <div class="stat-label">Profiling Survey</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;">
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">demographics</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">attitudes</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">hobbies</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">subscriptions</span>
+        </div>
+      </div>
+      <div class="stat-card brown">
+        <div class="stat-card-circle"></div>
+        <div class="stat-value">841</div>
+        <div class="stat-label">Signup Survey</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;">
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">signup reasons</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">Zerofy</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">porting</span>
+          <span class="tag" style="background:rgba(255,255,255,0.15);color:var(--cream);font-size:9px;padding:3px 10px;">competitors</span>
+        </div>
+      </div>
+    </div>
+    <div class="cite mustard-cite anim-3" style="max-width:700px;margin:20px auto 0;">
+      <div class="quote">Only <strong>gender</strong> and <strong>age_group</strong> appear in both surveys (bridge variables). When stacked, 55% of all cells are missing.</div>
+      <div class="source">126 total variables mapped via data_dictionary.json</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Pipeline Overview -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;bottom:-200px;right:-150px;background:var(--olive);"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:32px;">
+      <span class="tag tag-brown"><span class="tag-dot" style="background:var(--brown);"></span>Architecture</span>
+      <h2 class="hero" style="margin-top:10px;">Five-Stage <span class="text-brown">Pipeline</span></h2>
+    </div>
+    <div class="pipeline anim-2" style="margin-bottom:28px;">
+      <div class="pipe-step"><div class="ps-num text-olive">Step 1</div><div class="ps-name">Harmonize</div><div class="ps-detail">Map 2 CSVs to 126 vars</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step"><div class="ps-num text-brown">Step 2</div><div class="ps-name">Fuse</div><div class="ps-detail">MICE imputation</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step"><div class="ps-num text-mustard">Step 3</div><div class="ps-name">Generate</div><div class="ps-detail">Gaussian Copula</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step"><div class="ps-num text-olive">Step 4</div><div class="ps-name">Calibrate</div><div class="ps-detail">Resample to match real</div></div>
+      <div class="pipe-arrow">&rarr;</div>
+      <div class="pipe-step"><div class="ps-num text-brown">Step 5</div><div class="ps-name">Correct</div><div class="ps-detail">Fix joint distributions</div></div>
+    </div>
+    <div class="three-col anim-3">
+      <div class="stat-card charcoal" style="text-align:center;">
+        <div class="stat-card-circle"></div>
+        <div class="stat-value">1,931</div>
+        <div class="stat-label">Fused rows</div>
+      </div>
+      <div class="stat-card mustard" style="text-align:center;">
+        <div class="stat-card-circle"></div>
+        <div class="stat-value">30K</div>
+        <div class="stat-label">Oversampled pool</div>
+      </div>
+      <div class="stat-card olive" style="text-align:center;">
+        <div class="stat-card-circle"></div>
+        <div class="stat-value">10K</div>
+        <div class="stat-label">Final population</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:20px;" class="anim-4">
+      <code>harmonize.py</code> <code>fuse.py</code> <code>generate.py</code> <code>prepare_supabase.py</code>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Harmonize + Fuse -->
+<div class="slide">
+  <div class="bg-circle" style="width:400px;height:400px;top:-120px;left:-80px;background:var(--olive);"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="margin-bottom:24px;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>Steps 1 &amp; 2</span>
+      <h2 class="hero" style="margin-top:10px;">Harmonize &amp; <span class="text-olive">Fuse</span></h2>
+    </div>
+    <div class="two-col">
+      <div class="anim-2">
+        <div class="title" style="margin-bottom:12px;">Data Dictionary</div>
+        <p class="body-text" style="margin-bottom:16px;">Map SurveyMonkey exports to 126 canonical variables with type enforcement.</p>
+        <table>
+          <tr><th>Type</th><th>Count</th><th>Examples</th></tr>
+          <tr><td><strong>Binary</strong></td><td class="text-olive" style="font-weight:700;">85</td><td>uses_spotify, hobby_arts</td></tr>
+          <tr><td><strong>Ordinal</strong></td><td class="text-brown" style="font-weight:700;">30</td><td>attitude_*, cs_rating</td></tr>
+          <tr><td><strong>Categorical</strong></td><td style="font-weight:700;color:var(--golden-brown);">8</td><td>gender, marital_status</td></tr>
+          <tr><td><strong>Continuous</strong></td><td style="font-weight:700;color:var(--text-muted);">3</td><td>plan_data_gb, plan_price</td></tr>
+        </table>
+      </div>
+      <div class="anim-3">
+        <div class="title" style="margin-bottom:12px;">MICE Imputation</div>
+        <p class="body-text" style="margin-bottom:16px;">5 rounds of chained equations fill 55% missing cells.</p>
+        <div class="ladder">
+          <div class="ladder-step" style="border-left:4px solid var(--olive);">
+            <div class="step-label text-olive">Input</div>
+            <div class="step-content">1,931 rows &times; 126 cols &mdash; 55% missing</div>
+          </div>
+          <div class="ladder-arrow">&darr;</div>
+          <div class="ladder-step" style="border-left:4px solid var(--brown);">
+            <div class="step-label text-brown">MICE &times; 5</div>
+            <div class="step-content">Each column predicted from all others iteratively</div>
+          </div>
+          <div class="ladder-arrow">&darr;</div>
+          <div class="ladder-step" style="border-left:4px solid var(--success-green);">
+            <div class="step-label text-green">Output</div>
+            <div class="step-content">1,931 rows &times; 126 cols &mdash; 0% missing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Model Comparison -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;bottom:-200px;left:-150px;"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:24px;">
+      <span class="tag tag-brown"><span class="tag-dot" style="background:var(--brown);"></span>Step 3</span>
+      <h2 class="hero" style="margin-top:10px;">Why <span class="text-brown">Gaussian Copula</span></h2>
+    </div>
+    <div class="two-col anim-2">
+      <div>
+        <table>
+          <tr><th>Model</th><th>Marginals</th><th>Joints</th><th>Pick</th></tr>
+          <tr><td><strong>Gaussian Copula</strong></td><td class="text-green" style="font-weight:600;">Good</td><td class="text-green" style="font-weight:600;">Best</td><td><span class="tag tag-green" style="font-size:9px;padding:3px 10px;">Primary</span></td></tr>
+          <tr><td>CTGAN</td><td style="color:var(--golden-brown);font-weight:600;">OK</td><td class="text-red" style="font-weight:600;">Poor</td><td><span class="tag tag-red" style="font-size:9px;padding:3px 10px;">Backup</span></td></tr>
+          <tr><td>TVAE</td><td class="text-red" style="font-weight:600;">Poor</td><td class="text-red" style="font-weight:600;">Poor</td><td><span class="tag tag-red" style="font-size:9px;padding:3px 10px;">Backup</span></td></tr>
+        </table>
+        <div class="cite olive-cite" style="margin-top:16px;">
+          <div class="quote">Copula explicitly models variable correlations via a multivariate Gaussian, preserving conditional relationships that GANs flatten.</div>
+          <div class="source">SDV Library &mdash; sdv.dev</div>
+        </div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:10px;">Gender &mdash; Real: 66.2% Male</p>
+        <div style="margin-bottom:20px;">
+          <div class="bar-row"><span class="bar-label">Copula</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:65.5%;">65.5%</div></div></div>
+          <div class="bar-row"><span class="bar-label">CTGAN</span><div class="bar-track"><div class="bar-fill mustard-bar" style="width:61.3%;">61.3%</div></div></div>
+          <div class="bar-row"><span class="bar-label">TVAE</span><div class="bar-track"><div class="bar-fill red-bar" style="width:80.9%;">80.9%</div></div></div>
+        </div>
+        <p class="label" style="margin-bottom:10px;">Age 35-44 &mdash; Real: 30.9%</p>
+        <div>
+          <div class="bar-row"><span class="bar-label">Copula</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:60.8%;">30.4%</div></div></div>
+          <div class="bar-row"><span class="bar-label">CTGAN</span><div class="bar-track"><div class="bar-fill mustard-bar" style="width:42.8%;">21.4%</div></div></div>
+          <div class="bar-row"><span class="bar-label">TVAE</span><div class="bar-track"><div class="bar-fill red-bar" style="width:100%;">53.3%</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Calibration -->
+<div class="slide">
+  <div class="bg-circle" style="width:400px;height:400px;top:-150px;right:-100px;background:var(--olive);"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="margin-bottom:24px;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>Step 4</span>
+      <h2 class="hero" style="margin-top:10px;">Calibrate: <span class="text-olive">Importance Resampling</span></h2>
+    </div>
+    <div class="two-col anim-2">
+      <div>
+        <div class="step-card" style="border-left-color:var(--olive);"><div class="label text-olive" style="margin-bottom:4px;">Step 1</div><div class="body-text">Oversample <strong style="color:var(--charcoal);">30,000 rows</strong> from saved Copula model</div></div>
+        <div class="step-card" style="border-left-color:var(--brown);"><div class="label text-brown" style="margin-bottom:4px;">Step 2</div><div class="body-text">Weight = &prod;(real_freq / syn_freq) across <strong style="color:var(--charcoal);">38 columns</strong></div></div>
+        <div class="step-card" style="border-left-color:var(--mustard);"><div class="label" style="color:var(--golden-brown);margin-bottom:4px;">Step 3</div><div class="body-text">Reserve <strong style="color:var(--charcoal);">min 3 rows</strong> per category</div></div>
+        <div class="step-card" style="border-left-color:var(--success-green);"><div class="label text-green" style="margin-bottom:4px;">Step 4</div><div class="body-text">Weighted resample to <strong style="color:var(--charcoal);">10,000 rows</strong></div></div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:10px;">Post-Calibration Quality</p>
+        <table>
+          <tr><th>Variable</th><th>TVD</th><th>Max Drift</th></tr>
+          <tr><td><strong>gender</strong></td><td class="text-green" style="font-weight:600;">0.0%</td><td class="text-green" style="font-weight:600;">0.0%</td></tr>
+          <tr><td><strong>age_group</strong></td><td class="text-green" style="font-weight:600;">1.3%</td><td class="text-green" style="font-weight:600;">1.2%</td></tr>
+          <tr><td><strong>deal_search_freq</strong></td><td class="text-green" style="font-weight:600;">0.3%</td><td class="text-green" style="font-weight:600;">0.2%</td></tr>
+          <tr><td><strong>marital_status</strong></td><td class="text-green" style="font-weight:600;">0.3%</td><td class="text-green" style="font-weight:600;">0.3%</td></tr>
+        </table>
+        <div style="display:flex;gap:16px;margin-top:16px;">
+          <div class="stat-card olive" style="flex:1;text-align:center;padding:16px;">
+            <div class="stat-value" style="font-size:28px;">0.1%</div><div class="stat-label">Median binary drift</div>
+          </div>
+          <div class="stat-card olive" style="flex:1;text-align:center;padding:16px;">
+            <div class="stat-value" style="font-size:28px;">0.4%</div><div class="stat-label">Max binary drift</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Conditional Correction -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;bottom:-200px;right:-150px;"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:24px;">
+      <span class="tag tag-mustard"><span class="tag-dot" style="background:var(--mustard);"></span>Step 5</span>
+      <h2 class="hero" style="margin-top:10px;">Correct: <span class="text-brown">Joint</span> Distributions</h2>
+      <p class="subtitle" style="margin-top:8px;">Calibration fixes marginals. But P(Spotify | age 55+) was still 46%.</p>
+    </div>
+    <div class="two-col anim-2">
+      <div>
+        <div class="step-card" style="border-left-color:var(--brown);margin-bottom:10px;"><div class="body-text">Compute real P(var | age_group, gender) for each stratum with &ge;10 real obs</div></div>
+        <div class="step-card" style="border-left-color:var(--olive);margin-bottom:10px;"><div class="body-text">Reassign synthetic values within each stratum to match</div></div>
+        <div class="step-card" style="border-left-color:var(--mustard);margin-bottom:10px;"><div class="body-text">Applied to all <strong style="color:var(--charcoal);">121 non-strata columns</strong></div></div>
+        <div class="stat-card brown" style="text-align:center;margin-top:12px;">
+          <div class="stat-card-circle"></div>
+          <div class="stat-value" style="font-size:32px;">1,452</div>
+          <div class="stat-label">Conditional corrections applied</div>
+        </div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:10px;">Spotify Usage by Age &mdash; Before vs After</p>
+        <table>
+          <tr><th>Age</th><th>Real</th><th style="color:var(--urgent-red);">Before</th><th style="color:var(--success-green);">After</th></tr>
+          <tr><td><strong>18-22</strong></td><td>78.2%</td><td class="text-red">~flat</td><td class="text-green" style="font-weight:600;">76.1%</td></tr>
+          <tr><td><strong>26-34</strong></td><td>63.9%</td><td class="text-red">~flat</td><td class="text-green" style="font-weight:600;">64.0%</td></tr>
+          <tr><td><strong>35-44</strong></td><td>49.0%</td><td class="text-red">~flat</td><td class="text-green" style="font-weight:600;">49.0%</td></tr>
+          <tr><td><strong>45-54</strong></td><td>43.2%</td><td class="text-red">~flat</td><td class="text-green" style="font-weight:600;">43.2%</td></tr>
+          <tr><td><strong>55+</strong></td><td>0.0%</td><td class="text-red" style="font-weight:700;">46.0%</td><td class="text-green" style="font-weight:700;">0.0%</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Quality Loss Chain -->
+<div class="slide">
+  <div class="bg-circle" style="width:400px;height:400px;top:-120px;left:-80px;"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:24px;">
+      <span class="tag tag-brown"><span class="tag-dot" style="background:var(--brown);"></span>Quality Model</span>
+      <h2 class="hero" style="margin-top:10px;">Three Stages of <span class="text-brown">Information Loss</span></h2>
+    </div>
+    <div class="two-col" style="align-items:center;">
+      <div class="anim-2">
+        <div class="ladder">
+          <div class="ladder-step" style="border:2px solid var(--olive);">
+            <div class="step-label text-olive">Raw Surveys</div>
+            <div class="step-content">Ground truth &mdash; but each survey only covers its own variables</div>
+          </div>
+          <div class="ladder-arrow" style="color:var(--urgent-red);">&darr; <span style="font-size:10px;font-weight:700;">BIGGEST LOSS</span></div>
+          <div class="ladder-step" style="border:2px solid var(--urgent-red);background:rgba(196,69,54,0.04);">
+            <div class="step-label text-red">Stage 1: MICE</div>
+            <div class="step-content">Fills 55% missing. Some variables are 89% imputed &mdash; distribution is partly invention.</div>
+          </div>
+          <div class="ladder-arrow">&darr;</div>
+          <div class="ladder-step" style="border:2px solid var(--brown);">
+            <div class="step-label text-brown">Stage 2: Copula</div>
+            <div class="step-content">Generates new rows. Amplifies MICE biases. Marginals drift 1-5%.</div>
+          </div>
+          <div class="ladder-arrow">&darr;</div>
+          <div class="ladder-step" style="border:2px solid var(--success-green);background:rgba(78,122,43,0.04);">
+            <div class="step-label text-green">Stage 3: Calibrate + Correct</div>
+            <div class="step-content">Marginals &lt;1.2% drift, conditionals &lt;6% (for n&ge;10 strata).</div>
+          </div>
+        </div>
+      </div>
+      <div class="anim-3">
+        <div class="cite red-cite" style="margin-bottom:14px;">
+          <div class="quote">TVD between fused and synthetic only measures Stage 2-3 fidelity. A variable with 216 real obs and 1,715 imputed can have perfect TVD but the distribution is mostly MICE's invention.</div>
+          <div class="source">Key Insight</div>
+        </div>
+        <div class="cite green-cite">
+          <div class="quote">Confidence is driven primarily by observation rate &mdash; what % of the fused data was actually observed &mdash; with TVD as a secondary signal for synthesis quality.</div>
+          <div class="source">utils/confidence.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Confidence Framework -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;bottom:-200px;right:-150px;background:var(--olive);"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:24px;">
+      <span class="tag tag-mustard"><span class="tag-dot" style="background:var(--mustard);"></span>Trust Signals</span>
+      <h2 class="hero" style="margin-top:10px;">Confidence <span class="text-brown">Framework</span></h2>
+    </div>
+    <div class="two-col anim-2">
+      <div>
+        <table>
+          <tr><th>Level</th><th>Obs Rate</th><th>TVD</th><th>Meaning</th></tr>
+          <tr><td><span class="tag tag-green" style="font-size:9px;padding:3px 10px;">HIGH</span></td><td>&gt;50%</td><td>&lt;5%</td><td class="body-text">Solid data, well-synthesized</td></tr>
+          <tr><td><span class="tag tag-mustard" style="font-size:9px;padding:3px 10px;">MEDIUM</span></td><td>20-50%</td><td>5-10%</td><td class="body-text">Some uncertainty</td></tr>
+          <tr><td><span class="tag tag-red" style="font-size:9px;padding:3px 10px;">LOW</span></td><td>&lt;20%</td><td>&ge;10%</td><td class="body-text">Mostly guesswork</td></tr>
+        </table>
+        <div class="cite" style="margin-top:16px;">
+          <div class="quote"><strong>cs_rating</strong> has perfect TVD (0.3%) but only 216 real observations (11.2%). Rated LOW because 89% is MICE's invention.</div>
+          <div class="source">variable_confidence.json</div>
+        </div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:10px;">Distribution Across 126 Variables</p>
+        <div class="confidence-bar" style="margin-bottom:20px;">
+          <div class="seg" style="width:46.8%;background:var(--success-green);">59 HIGH</div>
+          <div class="seg" style="width:31.0%;background:var(--mustard);color:var(--charcoal);">39 MED</div>
+          <div class="seg" style="width:22.2%;background:var(--urgent-red);">28 LOW</div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <p class="label text-green" style="margin-bottom:6px;">HIGH (&gt;50% real obs)</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;"><code>gender</code><code>age_group</code><code>marital_status</code><code>signup_reason_main</code><code>hobby_*</code></div>
+        </div>
+        <div>
+          <p class="label text-red" style="margin-bottom:6px;">LOW (&lt;20% real obs)</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;"><code>cs_rating</code><code>cs_last_contact</code><code>zerofy_purchase_freq</code><code>circlesai_frequency</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: ChatGPT Validation -->
+<div class="slide">
+  <div class="bg-circle" style="width:400px;height:400px;top:-120px;right:-80px;"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:24px;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>Validation</span>
+      <h2 class="hero" style="margin-top:10px;"><span class="text-olive">ChatGPT Usage</span> by Age Group</h2>
+    </div>
+    <div class="two-col anim-2">
+      <div>
+        <div class="bar-legend">
+          <span><span class="legend-dot" style="background:var(--olive);"></span> Real (fused)</span>
+          <span><span class="legend-dot" style="background:var(--brown);"></span> Synthetic (10K)</span>
+        </div>
+        <div>
+          <div class="bar-row"><span class="bar-label">18-22</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:78.2%;">78.2%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:83.8%;">83.8%</div></div></div>
+          <div style="height:4px;"></div>
+          <div class="bar-row"><span class="bar-label">23-25</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:60.2%;">60.2%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:61.3%;">61.3%</div></div></div>
+          <div style="height:4px;"></div>
+          <div class="bar-row"><span class="bar-label">26-34</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:57.4%;">57.4%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:57.1%;">57.1%</div></div></div>
+          <div style="height:4px;"></div>
+          <div class="bar-row"><span class="bar-label">35-44</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:54%;">54.0%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:54%;">54.0%</div></div></div>
+          <div style="height:4px;"></div>
+          <div class="bar-row"><span class="bar-label">45-54</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:43.2%;">43.2%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:43.2%;">43.2%</div></div></div>
+          <div style="height:4px;"></div>
+          <div class="bar-row"><span class="bar-label">55+</span><div class="bar-track"><div class="bar-fill olive-bar" style="width:2%;">0%</div></div></div>
+          <div class="bar-row"><span class="bar-label"></span><div class="bar-track"><div class="bar-fill brown-bar" style="width:2%;">0%</div></div></div>
+        </div>
+      </div>
+      <div>
+        <table>
+          <tr><th>Age</th><th>Real</th><th>Synth</th><th>Drift</th><th>n</th></tr>
+          <tr><td><strong>18-22</strong></td><td>78.2%</td><td>83.8%</td><td style="color:var(--golden-brown);font-weight:600;">5.7%</td><td style="color:var(--text-light);">55</td></tr>
+          <tr><td><strong>23-25</strong></td><td>60.2%</td><td>61.3%</td><td class="text-green" style="font-weight:600;">1.0%</td><td style="color:var(--text-light);">93</td></tr>
+          <tr><td><strong>26-34</strong></td><td>57.4%</td><td>57.1%</td><td class="text-green" style="font-weight:600;">0.3%</td><td style="color:var(--text-light);">366</td></tr>
+          <tr><td><strong>35-44</strong></td><td>54.0%</td><td>54.0%</td><td class="text-green" style="font-weight:600;">0.0%</td><td style="color:var(--text-light);">596</td></tr>
+          <tr><td><strong>45-54</strong></td><td>43.2%</td><td>43.2%</td><td class="text-green" style="font-weight:600;">0.0%</td><td style="color:var(--text-light);">535</td></tr>
+          <tr><td><strong>55+</strong></td><td>0.0%</td><td>0.0%</td><td class="text-green" style="font-weight:600;">0.0%</td><td style="color:var(--text-light);">279</td></tr>
+        </table>
+        <div class="cite olive-cite" style="margin-top:16px;">
+          <div class="quote">Drift scales inversely with stratum sample size. Strata with &ge;90 real observations achieve &lt;1% drift.</div>
+          <div class="source">Conditional correction via prepare_supabase.py</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Deployment -->
+<div class="slide" style="background:var(--cream);">
+  <div class="bg-circle" style="width:500px;height:500px;top:-200px;left:-150px;background:var(--olive);"></div>
+  <div style="width:100%;max-width:1100px;">
+    <div class="anim-1" style="text-align:center;margin-bottom:28px;">
+      <span class="tag tag-olive"><span class="tag-dot" style="background:var(--olive);"></span>Deployment</span>
+      <h2 class="hero" style="margin-top:10px;"><span class="text-olive">Supabase</span> + Lovable</h2>
+    </div>
+    <div class="three-col anim-2" style="margin-bottom:24px;">
+      <div class="card" style="border-left:5px solid var(--success-green);text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">&#128200;</div>
+        <div class="title text-green" style="font-size:16px;">Clean CSV</div>
+        <p style="font-size:12px;color:var(--text-muted);font-family:system-ui,sans-serif;margin-top:8px;">10K rows &times; 126 columns calibrated + corrected</p>
+      </div>
+      <div class="card" style="border-left:5px solid var(--olive);text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">&#128451;</div>
+        <div class="title text-olive" style="font-size:16px;">Supabase Postgres</div>
+        <p style="font-size:12px;color:var(--text-muted);font-family:system-ui,sans-serif;margin-top:8px;">Tables + metadata + 5 RPC functions</p>
+      </div>
+      <div class="card" style="border-left:5px solid var(--brown);text-align:center;">
+        <div style="font-size:28px;margin-bottom:8px;">&#127912;</div>
+        <div class="title text-brown" style="font-size:16px;">Lovable Frontend</div>
+        <p style="font-size:12px;color:var(--text-muted);font-family:system-ui,sans-serif;margin-top:8px;">React + filters + charts + confidence</p>
+      </div>
+    </div>
+    <div class="anim-3" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <div class="card" style="padding:12px 18px;text-align:center;flex:1;min-width:160px;"><code>filter_population</code><div style="font-size:11px;color:var(--text-light);font-family:system-ui,sans-serif;margin-top:4px;">Dynamic WHERE</div></div>
+      <div class="card" style="padding:12px 18px;text-align:center;flex:1;min-width:160px;"><code>aggregate_variables</code><div style="font-size:11px;color:var(--text-light);font-family:system-ui,sans-serif;margin-top:4px;">Mean / dist</div></div>
+      <div class="card" style="padding:12px 18px;text-align:center;flex:1;min-width:160px;"><code>crosstab_variables</code><div style="font-size:11px;color:var(--text-light);font-family:system-ui,sans-serif;margin-top:4px;">Contingency</div></div>
+      <div class="card" style="padding:12px 18px;text-align:center;flex:1;min-width:160px;"><code>compare_segments</code><div style="font-size:11px;color:var(--text-light);font-family:system-ui,sans-serif;margin-top:4px;">By segment</div></div>
+      <div class="card" style="padding:12px 18px;text-align:center;flex:1;min-width:160px;"><code>profile_segment</code><div style="font-size:11px;color:var(--text-light);font-family:system-ui,sans-serif;margin-top:4px;">Full profile</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: Closing -->
+<div class="slide" style="background:var(--charcoal);color:var(--cream);">
+  <div class="bg-circle" style="width:600px;height:600px;top:-250px;right:-200px;opacity:0.04;background:var(--mustard);"></div>
+  <div class="bg-circle" style="width:400px;height:400px;bottom:-150px;left:-100px;opacity:0.04;background:var(--olive);"></div>
+  <div class="full-center">
+    <span class="tag anim-1" style="background:rgba(225,184,59,0.2);color:var(--light-mustard);margin-bottom:20px;"><span class="tag-dot" style="background:var(--mustard);"></span>Summary</span>
+    <h2 class="mega anim-2" style="max-width:850px;color:var(--cream);">
+      A synthetic population that <span style="color:var(--mustard);">respects the data</span> it was built from.
+    </h2>
+    <div class="divider anim-3" style="margin:24px auto;"></div>
+    <div class="four-col anim-4" style="margin:20px 0;">
+      <div class="stat-card olive" style="text-align:center;padding:18px;">
+        <div class="stat-value" style="font-size:24px;">&lt;1.2%</div>
+        <div class="stat-label">Marginal drift (cat.)</div>
+      </div>
+      <div class="stat-card brown" style="text-align:center;padding:18px;">
+        <div class="stat-value" style="font-size:24px;">&lt;0.4%</div>
+        <div class="stat-label">Marginal drift (binary)</div>
+      </div>
+      <div class="stat-card mustard" style="text-align:center;padding:18px;">
+        <div class="stat-value" style="font-size:24px;">&lt;6%</div>
+        <div class="stat-label">Conditional drift</div>
+      </div>
+      <div class="stat-card charcoal" style="text-align:center;padding:18px;border:1px solid rgba(255,255,255,0.1);">
+        <div class="stat-value" style="font-size:24px;">126</div>
+        <div class="stat-label">Variables scored</div>
+      </div>
+    </div>
+    <div class="two-col anim-5" style="max-width:900px;gap:30px;margin-top:12px;">
+      <div>
+        <p style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--light-mustard);font-family:system-ui,sans-serif;">Pipeline innovations</p>
+        <p style="font-size:13px;color:var(--text-light);font-family:system-ui,sans-serif;line-height:1.7;">Gaussian Copula over CTGAN. Importance-weighted calibration with category preservation. Post-hoc conditional correction per stratum. Observation-rate confidence.</p>
+      </div>
+      <div>
+        <p style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--light-mustard);font-family:system-ui,sans-serif;">Honest limitations</p>
+        <p style="font-size:13px;color:var(--text-light);font-family:system-ui,sans-serif;line-height:1.7;">"Below 18" has 7 respondents. 28 variables rated LOW. Correction limited to 2 strata. MICE biases inherited.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end deck -->
+
+<!-- Navigation -->
+<div class="nav-bar" style="background:rgba(255,254,249,0.92);">
+  <div class="brand">SYNTHX</div>
+  <div class="nav-arrows">
+    <button onclick="goTo(current-1)">&laquo;</button>
+    <button onclick="goTo(current+1)">&raquo;</button>
+  </div>
+  <div class="progress-track" id="progressTrack">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="slide-counter" id="counter"></div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide'), total = slides.length;
+let current = 0;
+
+function goTo(n) {
+  if (n < 0 || n >= total) return;
+  slides[current].classList.remove('active');
+  current = n;
+  slides[current].classList.add('active');
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById('counter').textContent = `${current+1} / ${total}`;
+  document.getElementById('progressFill').style.width = `${((current+1)/total)*100}%`;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current+1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current-1); }
+  if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+  if (e.key === 'End') { e.preventDefault(); goTo(total-1); }
+});
+
+document.getElementById('progressTrack').addEventListener('click', e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  goTo(Math.floor(((e.clientX - r.left) / r.width) * total));
+});
+
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+document.addEventListener('touchend', e => {
+  const d = e.changedTouches[0].clientX - tx;
+  if (Math.abs(d) > 50) d > 0 ? goTo(current-1) : goTo(current+1);
+});
+
+updateUI();
+</script>
+</body>
+</html>
